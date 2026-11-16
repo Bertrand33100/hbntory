@@ -94,7 +94,7 @@ Le SSL/TLS n'est pas obligatoire pour ce projet.
 
 **Notre choix :**
 
-- Hachage des mots de passe avec **Argon2id** : algorithme récent, conçu pour les mots de passe, avec sel intégré, et volontairement coûteux en temps et en mémoire pour résister aux attaques par force brute. (À valider.)
+- Hachage des mots de passe avec **Argon2id** : algorithme conçu pour les mots de passe, avec sel intégré et volontairement coûteux en temps et en mémoire pour résister aux attaques par force brute. (À valider.)
 
 ---
 
@@ -125,15 +125,17 @@ Aucun historique de conversation n'est obligatoire. Chaque question est indépen
 | Backoffice | Gérer les utilisateurs et les stocks |
 | PostgreSQL | Stocker les utilisateurs, les agences et les quantités de stock |
 
-**Notre choix :**
+**Nos choix :**
 
-- Nous **étendons notre propre serveur MCP** avec des outils de stock en lecture seule, pour permettre au service IA de consulter les stocks. C'est l'une des deux options proposées par le sujet. Un seul serveur MCP expose donc deux familles d'outils : produits (via l'API externe) et stock (via la base de données).
-- La gestion et la modification des stocks restent exclusivement assurées par le Backoffice : les outils de stock du MCP sont en lecture seule.
+- Le Product MCP est développé par notre équipe. Il permet d'interroger l'API Product externe pour obtenir la liste des produits et leurs détails.
+- Le **Stock Query** est une fonction interne au service AI Query. Elle permet de consulter les quantités disponibles dans PostgreSQL en lecture seule.
+- Le service AI Query peut donc interroger le Product MCP pour les informations produits et le Stock Query interne pour les informations de stock.
+- La gestion et la modification des stocks restent exclusivement assurées par le Backoffice. Le Stock Query ne peut effectuer aucune modification dans la base de données.
 
 **Alternatives envisagées et écartées :**
 
-- **Un serveur MCP séparé pour le stock** : meilleure séparation des responsabilités, accès à la base limité à un seul composant. Écartée pour limiter le nombre de services à développer et à déployer.
-- **Une fonction interne au service AI Query (« Stock Query »)** qui lit directement PostgreSQL : autorisée par la section « AI Query Service » du sujet, mais écartée pour rester dans les deux options proposées par la section « MCP Requirements » (étendre notre MCP ou utiliser un MCP tiers), et pour que le service IA n'ait aucun accès direct à la base.
+- **Un serveur MCP séparé pour le stock** : cette solution aurait permis une séparation supplémentaire des responsabilités, mais aurait ajouté un service à développer et à déployer.
+- **L'extension du Product MCP avec des outils de stock** : cette solution aurait regroupé les outils produits et stock dans un même serveur MCP. Elle n'a pas été retenue afin de conserver une séparation entre l'accès à l'API externe et l'accès aux données internes.
 
 **Obligation du sujet :**
 
@@ -147,10 +149,11 @@ Aucun historique de conversation n'est obligatoire. Chaque question est indépen
 | --- | --- |
 | Backoffice | REST + HTML/CSS/JavaScript |
 | Client Web ↔ AI Query Service | REST |
-| AI Query Service ↔ MCP | Streamable HTTP |
-| Serveur MCP | Un seul serveur développé par notre équipe : outils produits + outils de stock (lecture seule) |
+| AI Query Service ↔ Product MCP | MCP Streamable HTTP |
+| Product MCP | Serveur développé par notre équipe, dédié aux informations produits |
+| Stock Query | Fonction interne au service AI Query, accès PostgreSQL en lecture seule |
 | Base de données | PostgreSQL |
-| Accès à la base | SQLAlchemy |
+| Accès à la base du Backoffice | SQLAlchemy |
 | Hachage des mots de passe | Argon2id (à valider) |
 
 ---
@@ -168,9 +171,9 @@ L'ordre suit les dépendances entre composants : on construit d'abord ce dont le
 | Étape | Piste A — Backoffice | Piste B — IA |
 | --- | --- | --- |
 | 0 | **Ensemble :** lancer la Product API (Docker), tester ses routes, noter le format des produits et des identifiants | |
-| 1 | Base de données : tables `users`, `branches`, `stock` + création de l'admin au démarrage | Serveur MCP : outils produits (`list_products`, `get_product`) |
-| 2 | Authentification et contrôle des rôles | Serveur MCP : outils stock (`get_stock_by_product`, `get_stock_by_branch`) |
-| 3 | Gestion des utilisateurs par l'admin | AI Query Service : agent IA + route REST de questions |
+| 1 | Base de données : tables `users`, `branches`, `stock` + création de l'admin au démarrage | Product MCP : outils produits (`list_products`, `get_product`) |
+| 2 | Authentification et contrôle des rôles | Stock Query interne : fonctions de consultation du stock en lecture seule |
+| 3 | Gestion des utilisateurs par l'admin | AI Query Service : agent IA + route REST de questions, connexion au Product MCP et au Stock Query |
 | 4 | Gestion du stock par les utilisateurs standards | Client Web |
 | 5 | **Ensemble :** intégration complète dans `docker-compose` et test des questions d'exemple du sujet | |
 
@@ -180,22 +183,38 @@ L'ordre suit les dépendances entre composants : on construit d'abord ce dont le
 - **Base de données avant tout le Backoffice :** toutes les fonctionnalités lisent ou écrivent dans la base.
 - **Authentification avant les fonctionnalités :** chaque action doit savoir qui fait la demande (rôle, agence) pour appliquer les règles d'accès.
 - **Gestion des utilisateurs avant le stock :** il faut un utilisateur standard affecté à une agence pour tester la gestion du stock.
-- **Outils produits avant outils stock :** ils ne dépendent que de la Product API, déjà disponible.
-- **Client Web en dernier :** il dépend de la route de l'AI Query Service.
+- **Product MCP avant AI Query :** le service IA doit pouvoir interroger les informations produits.
+- **Stock Query après la base de données :** la structure de la table `stock` doit être disponible pour permettre les consultations.
+- **Client Web en dernier :** il dépend de la route REST de l'AI Query Service.
 
 **Points de rencontre entre les pistes**
 
-- **B2 dépend de A1 :** le schéma de la table `stock` doit être figé et la base disponible.
-- **Étape 5 :** les deux pistes sont branchées ensemble.
+- **B2 dépend de A1 :** le schéma de la table `stock` doit être défini et la base disponible.
+- **B3 dépend de B1 et B2 :** le service AI Query doit pouvoir accéder aux informations produits et aux informations de stock.
+- **Étape 5 :** les deux pistes sont intégrées et testées ensemble.
 
 **Méthode dans chaque étape du Backoffice**
 
 Pour chaque fonctionnalité : d'abord les routes de l'API REST, testées seules (`curl` ou Postman), puis l'interface JavaScript qui les appelle.
 
-### Liste 2 — Pour plus tard
+### Liste 2 — Améliorations possibles après le MVP
 
-*À compléter.*
+Ces fonctionnalités pourront être envisagées après la réalisation et la validation de toutes les obligations du sujet.
+
+- **Historique des mouvements de stock :** conserver les entrées et sorties de stock avec la date, la quantité et l'utilisateur concerné.
+- **Journal d'activité du Backoffice :** consulter les principales actions réalisées par les utilisateurs.
+- **Recherche et filtres avancés :** faciliter la recherche d'utilisateurs, de produits et de stocks.
+- **Tableau de bord administrateur :** afficher des indicateurs généraux sur les agences et les stocks.
+- **Amélioration de l'interface :** améliorer l'ergonomie du Backoffice et la présentation des réponses du Client Web.
 
 ### Liste 3 — Seulement si le temps le permet
 
-*À compléter.*
+Ces fonctionnalités sont des bonus. Elles ne seront envisagées que si le MVP est entièrement terminé, fonctionnel et testé.
+
+- **Historique des conversations du Client Web :** permettre de retrouver les questions précédemment posées.
+- **Indicateurs visuels de disponibilité :** afficher plus clairement les niveaux de stock disponibles.
+- **Notifications de stock faible :** signaler les produits dont la quantité passe sous un seuil défini.
+- **Interface responsive :** améliorer l'utilisation du Backoffice et du Client Web sur mobile et tablette.
+- **Tests automatisés complémentaires :** augmenter la couverture des tests au-delà des scénarios obligatoires.
+
+**Règle de priorité :** aucune fonctionnalité des listes 2 et 3 ne doit retarder ou compromettre la réalisation des obligations de la liste 1.
