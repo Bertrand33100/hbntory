@@ -14,4 +14,6 @@
 
 ## 7. Diagramme
 
-Voir `HBntory_Architecture_Generale.drawio`.
+![Architecture générale de HBntory](architecture.png)
+
+Source modifiable : `HBntory_Architecture_Generale.drawio` (à ouvrir dans draw.io).
