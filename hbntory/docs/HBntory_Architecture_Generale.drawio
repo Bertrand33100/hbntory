@@ -1,0 +1,100 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="hbntory-v2" name="Architecture générale">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Titre -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:20px&quot;&gt;HBntory — Architecture générale&lt;/b&gt;&lt;br&gt;Plateforme multi-branches de gestion de stock et assistant client IA" style="text;html=1;align=center;verticalAlign=middle;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="560" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Zones -->
+        <mxCell id="zPublic" value="&lt;b&gt;ESPACE PUBLIC — VISITEURS&lt;/b&gt;" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#3F8A5A;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="20" y="100" width="300" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="zInterne" value="&lt;b&gt;ESPACE INTERNE — EMPLOYÉS&lt;/b&gt;" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#4F7FC0;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="20" y="420" width="300" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="zServices" value="&lt;b&gt;SERVICES HBNTORY (développés par l'équipe)&lt;/b&gt;" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#8A6FB0;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="360" y="100" width="380" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="zExterne" value="&lt;b&gt;SOURCE EXTERNE FOURNIE&lt;/b&gt;" style="rounded=1;arcSize=5;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#C0665A;verticalAlign=top;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="780" y="100" width="340" height="580" as="geometry" />
+        </mxCell>
+
+        <!-- Client Web -->
+        <mxCell id="client" value="&lt;b&gt;Client Web&lt;/b&gt;&lt;br&gt;&lt;br&gt;Page chat / barre de recherche&lt;br&gt;Sans compte utilisateur&lt;br&gt;• Envoie la question&lt;br&gt;• Affiche la réponse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1F3B2A;strokeColor=#3F8A5A;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="260" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- Backoffice -->
+        <mxCell id="backoffice" value="&lt;b&gt;Backoffice (REST + JS)&lt;/b&gt;&lt;br&gt;Interface HTML/CSS/JS + API REST (JSON)&lt;br&gt;Connexion obligatoire&lt;br&gt;&lt;br&gt;&lt;b&gt;Admin&lt;/b&gt;&lt;br&gt;Créer / modifier / soft-delete les users&lt;br&gt;Mot de passe, affectation à une branche&lt;br&gt;Aucune gestion du stock&lt;br&gt;&lt;br&gt;&lt;b&gt;Employé&lt;/b&gt;&lt;br&gt;Ajouter / retirer / consulter le stock&lt;br&gt;de sa branche uniquement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1D2F4A;strokeColor=#4F7FC0;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="40" y="460" width="260" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- AI Query Service -->
+        <mxCell id="ai" value="&lt;b&gt;AI Query Service&lt;/b&gt;&lt;br&gt;Service indépendant du Backoffice&lt;br&gt;&lt;br&gt;• Reçoit la question du client&lt;br&gt;• Fait travailler l'agent IA&lt;br&gt;• Appelle les outils MCP&lt;br&gt;• Croise produits + stock&lt;br&gt;• Répond uniquement avec les données obtenues&lt;br&gt;  (sinon : « information indisponible »)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3A3045;strokeColor=#8A6FB0;fontColor=#FFFFFF;align=center;" vertex="1" parent="1">
+          <mxGeometry x="400" y="140" width="300" height="170" as="geometry" />
+        </mxCell>
+
+        <!-- MCP Server -->
+        <mxCell id="mcp" value="&lt;b&gt;HBntory MCP Server&lt;/b&gt;&lt;br&gt;Outils en lecture seule (produits + stock)&lt;br&gt;&lt;br&gt;• list_products&lt;br&gt;• get_product&lt;br&gt;• get_stock_by_product&lt;br&gt;• get_stock_by_branch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3A3045;strokeColor=#8A6FB0;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="400" y="350" width="300" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Base de données -->
+        <mxCell id="db" value="&lt;b&gt;Base de données relationnelle&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;users&lt;/b&gt; : identifiants, rôle, branche, soft-delete&lt;br&gt;&lt;b&gt;branches&lt;/b&gt; : magasins&lt;br&gt;&lt;b&gt;stock&lt;/b&gt; : branch_id, product_id, quantity ≥ 0&lt;br&gt;&lt;br&gt;&lt;i&gt;Aucun nom, prix, description ni image produit&lt;/i&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#3D2E0F;strokeColor=#C9A227;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="400" y="510" width="300" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- Product API -->
+        <mxCell id="api" value="&lt;b&gt;Product API&lt;/b&gt;&lt;br&gt;Conteneur Docker fourni, lecture seule&lt;br&gt;&lt;br&gt;Source de référence des produits :&lt;br&gt;• identifiant&lt;br&gt;• nom et description&lt;br&gt;• prix, image, métadonnées" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A2A26;strokeColor=#C0665A;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="810" y="340" width="280" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- Note séparation -->
+        <mxCell id="noteSep" value="&lt;b&gt;Règle de séparation des données&lt;/b&gt;&lt;br&gt;Notre base ne garde que l'identifiant produit, associé à une branche et une quantité. Les informations descriptives restent dans la Product API. Le seul lien entre les deux : product_id." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#2B2B2B;strokeColor=#C9A227;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="810" y="530" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Note sécurité -->
+        <mxCell id="noteSec" value="&lt;b&gt;Sécurité — règles appliquées côté serveur&lt;/b&gt;&lt;br&gt;• Employé : uniquement le stock de sa branche  • Admin : gestion des users, jamais du stock&lt;br&gt;• Mots de passe hachés  • Users soft-deletés : connexion refusée  • Quantité jamais négative&lt;br&gt;• L'IA n'a qu'un accès en lecture" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#2B2B2B;strokeColor=#AAAAAA;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="200" y="760" width="760" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Flèches chemin visiteur -->
+        <mxCell id="e1" value="Question (HTTP / REST)" style="endArrow=classic;html=1;strokeColor=#FFFFFF;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;exitX=1;exitY=0.35;entryX=0;entryY=0.35;" edge="1" parent="1" source="client" target="ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="Réponse (JSON)" style="endArrow=classic;html=1;strokeColor=#FFFFFF;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;exitX=0;exitY=0.7;entryX=1;entryY=0.75;" edge="1" parent="1" source="ai" target="client">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="Appels d'outils MCP" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#FFFFFF;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;" edge="1" parent="1" source="ai" target="mcp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="Requêtes HTTP (lecture)" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#FFFFFF;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;exitX=1;exitY=0.5;entryX=0;entryY=0.6;" edge="1" parent="1" source="mcp" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="Lecture du stock&lt;br&gt;(SQL, lecture seule)" style="endArrow=classic;html=1;strokeColor=#C9A227;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;" edge="1" parent="1" source="mcp" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Flèches chemin employé -->
+        <mxCell id="e6" value="Lecture / écriture&lt;br&gt;(SQLAlchemy)" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#FFFFFF;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;exitX=1;exitY=0.55;entryX=0;entryY=0.5;" edge="1" parent="1" source="backoffice" target="db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="Noms des produits (HTTP / REST, lecture)" style="endArrow=classic;html=1;strokeColor=#FFFFFF;fontColor=#FFFFFF;labelBackgroundColor=#1E1E1E;edgeStyle=orthogonalEdgeStyle;rounded=0;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="backoffice" target="api">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="720" />
+              <mxPoint x="1140" y="720" />
+              <mxPoint x="1140" y="415" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
