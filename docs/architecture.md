@@ -59,7 +59,7 @@ Les choix de protocoles sont justifiés dans `decisions.md`.
 
 | Table | Contenu |
 | --- | --- |
-| `users` | Identifiant, mot de passe haché (Argon2id), rôle (`admin` ou `common_user`), agence affectée, indicateur de soft delete |
+| `users` | Identifiant, mot de passe haché (jamais en clair), rôle (`admin` ou `common_user`), agence affectée, indicateur de soft delete |
 | `branches` | Les agences de l'enseigne |
 | `stock` | `branch_id`, `product_id`, `available_quantity` (entier ≥ 0), une seule ligne par couple agence / produit |
 
