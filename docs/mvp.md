@@ -128,7 +128,12 @@ Aucun historique de conversation n'est obligatoire. Chaque question est indépen
 **Notre choix :**
 
 - Nous **étendons notre propre serveur MCP** avec des outils de stock en lecture seule, pour permettre au service IA de consulter les stocks. C'est l'une des deux options proposées par le sujet. Un seul serveur MCP expose donc deux familles d'outils : produits (via l'API externe) et stock (via la base de données).
-- Alternative envisagée : un serveur MCP séparé pour le stock (meilleure séparation des responsabilités, accès à la base limité à un seul composant). Écartée pour limiter le nombre de services à développer et à déployer.
+- La gestion et la modification des stocks restent exclusivement assurées par le Backoffice : les outils de stock du MCP sont en lecture seule.
+
+**Alternatives envisagées et écartées :**
+
+- **Un serveur MCP séparé pour le stock** : meilleure séparation des responsabilités, accès à la base limité à un seul composant. Écartée pour limiter le nombre de services à développer et à déployer.
+- **Une fonction interne au service AI Query (« Stock Query »)** qui lit directement PostgreSQL : autorisée par la section « AI Query Service » du sujet, mais écartée pour rester dans les deux options proposées par la section « MCP Requirements » (étendre notre MCP ou utiliser un MCP tiers), et pour que le service IA n'ait aucun accès direct à la base.
 
 **Obligation du sujet :**
 

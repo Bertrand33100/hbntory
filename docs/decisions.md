@@ -60,6 +60,7 @@ Le sujet précise qu'il n'est pas attendu de choisir l'option la plus complexe, 
 **Alternatives écartées :**
 - **MCP Toolbox for Databases** (MCP tiers) : outil standard, configurable en YAML avec des requêtes prédéfinies. Écarté car il ajoute un service et un outil à apprendre, et l'agent devrait se connecter à deux serveurs MCP.
 - **Un second serveur MCP dédié au stock** : meilleure séparation des responsabilités, et accès à la base limité au seul composant qui en a besoin. Écarté pour limiter le nombre de services à développer et à déployer.
+- **Une fonction interne au service AI Query (« Stock Query »)** qui lit directement PostgreSQL en lecture seule : autorisée par la section « AI Query Service » du sujet (« depuis la base relationnelle ou via une intégration MCP »). Écartée pour rester dans les deux options proposées par la section « MCP Requirements », et pour que le service IA n'ait aucun accès direct à la base : toutes les données passent par les outils MCP.
 
 ---
 
