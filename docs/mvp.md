@@ -128,7 +128,12 @@ Aucun historique de conversation n'est obligatoire. Chaque question est indépen
 **Notre choix :**
 
 - Nous **étendons notre propre serveur MCP** avec des outils de stock en lecture seule, pour permettre au service IA de consulter les stocks. C'est l'une des deux options proposées par le sujet. Un seul serveur MCP expose donc deux familles d'outils : produits (via l'API externe) et stock (via la base de données).
-- Alternative envisagée : un serveur MCP séparé pour le stock (meilleure séparation des responsabilités, accès à la base limité à un seul composant). Écartée pour limiter le nombre de services à développer et à déployer.
+- La gestion et la modification des stocks restent exclusivement assurées par le Backoffice : les outils de stock du MCP sont en lecture seule.
+
+**Alternatives envisagées et écartées :**
+
+- **Un serveur MCP séparé pour le stock** : meilleure séparation des responsabilités, accès à la base limité à un seul composant. Écartée pour limiter le nombre de services à développer et à déployer.
+- **Une fonction interne au service AI Query (« Stock Query »)** qui lit directement PostgreSQL : autorisée par la section « AI Query Service » du sujet, mais écartée pour rester dans les deux options proposées par la section « MCP Requirements » (étendre notre MCP ou utiliser un MCP tiers), et pour que le service IA n'ait aucun accès direct à la base.
 
 **Obligation du sujet :**
 
@@ -156,7 +161,36 @@ Aucun historique de conversation n'est obligatoire. Chaque question est indépen
 
 Toutes les obligations ci-dessus (sections 1 à 6).
 
-*Ordre d'implémentation : à compléter.*
+**Ordre d'implémentation**
+
+L'ordre suit les dépendances entre composants : on construit d'abord ce dont les autres ont besoin. Les deux pistes avancent en parallèle.
+
+| Étape | Piste A — Backoffice | Piste B — IA |
+| --- | --- | --- |
+| 0 | **Ensemble :** lancer la Product API (Docker), tester ses routes, noter le format des produits et des identifiants | |
+| 1 | Base de données : tables `users`, `branches`, `stock` + création de l'admin au démarrage | Serveur MCP : outils produits (`list_products`, `get_product`) |
+| 2 | Authentification et contrôle des rôles | Serveur MCP : outils stock (`get_stock_by_product`, `get_stock_by_branch`) |
+| 3 | Gestion des utilisateurs par l'admin | AI Query Service : agent IA + route REST de questions |
+| 4 | Gestion du stock par les utilisateurs standards | Client Web |
+| 5 | **Ensemble :** intégration complète dans `docker-compose` et test des questions d'exemple du sujet | |
+
+**Justification de l'ordre**
+
+- **Étape 0 en premier :** le format de `product_id` fourni par la Product API détermine le type de la colonne dans la table `stock`.
+- **Base de données avant tout le Backoffice :** toutes les fonctionnalités lisent ou écrivent dans la base.
+- **Authentification avant les fonctionnalités :** chaque action doit savoir qui fait la demande (rôle, agence) pour appliquer les règles d'accès.
+- **Gestion des utilisateurs avant le stock :** il faut un utilisateur standard affecté à une agence pour tester la gestion du stock.
+- **Outils produits avant outils stock :** ils ne dépendent que de la Product API, déjà disponible.
+- **Client Web en dernier :** il dépend de la route de l'AI Query Service.
+
+**Points de rencontre entre les pistes**
+
+- **B2 dépend de A1 :** le schéma de la table `stock` doit être figé et la base disponible.
+- **Étape 5 :** les deux pistes sont branchées ensemble.
+
+**Méthode dans chaque étape du Backoffice**
+
+Pour chaque fonctionnalité : d'abord les routes de l'API REST, testées seules (`curl` ou Postman), puis l'interface JavaScript qui les appelle.
 
 ### Liste 2 — Pour plus tard
 
