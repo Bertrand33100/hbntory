@@ -1,13 +1,19 @@
 
-import os
-import httpx
+#!/usr/bin/env python3
+"""Serveur MCP HBntory connecté à la Product API externe."""
 
+import os
+
+import httpx
 from fastmcp import FastMCP
+
 
 mcp = FastMCP("HBntory MCP Server")
 
-PRODUCT_API_URL = os.getenv("PRODUCT_API_URL", "http://localhost:5001")
-
+PRODUCT_API_URL = os.getenv(
+    "PRODUCT_API_URL",
+    "http://localhost:5001"
+)
 
 
 @mcp.tool
@@ -19,7 +25,7 @@ async def list_products() -> dict:
                 f"{PRODUCT_API_URL}/api/v1/products",
                 params={
                     "limit": 100,
-                    "include_discontinued": "true",                                        
+                    "include_discontinued": "true",
                 }
             )
             response.raise_for_status()
@@ -41,13 +47,9 @@ async def list_products() -> dict:
         ) from error
 
 
-
-
 @mcp.tool
 async def get_product(product_id: str) -> dict:
-    """
-    Récupère les détails d'un produit à partir de son ID ou de son SKU.
-    """
+    """Récupère les détails d'un produit par son ID ou son SKU."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(
@@ -75,6 +77,7 @@ async def get_product(product_id: str) -> dict:
         raise ValueError(
             f"Impossible de contacter la Product API : {error}"
         ) from error
+
 
 if __name__ == "__main__":
     mcp.run(
