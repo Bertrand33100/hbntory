@@ -157,4 +157,35 @@ La base est initialisée avec :
 - **au moins deux agences** (ex. `Paris`, `Lyon`) ;
 - **du stock d'exemple**, référençant des `id` existants de la Product API, pour tester le Backoffice et l'IA.
 
-*Le mécanisme exact d'initialisation (script ou migrations) sera précisé à l'étape 3 de la tâche 1.*
+*La base est initialisée par `backoffice/seed.py`, qui crée les tables avec `db.create_all()` puis ajoute les données de départ (voir `docs/decisions.md`, section 6).*
+
+## Concurrence et dates de mise à jour
+
+### Retraits de stock simultanés
+
+Deux utilisateurs peuvent retirer le même produit dans la même agence au même moment.
+Si chaque requête lisait d'abord la quantité, puis écrivait le résultat de son calcul,
+le second retrait pourrait écraser le premier et fausser le stock.
+
+Pour l'éviter, un retrait est fait en une seule requête atomique, qui vérifie la quantité
+et la modifie en même temps :
+
+```sql
+UPDATE stock
+SET available_quantity = available_quantity - :quantite
+WHERE branch_id = :agence
+  AND product_id = :produit
+  AND available_quantity >= :quantite;
+```
+
+Si aucune ligne n'est modifiée, le stock est insuffisant : l'application refuse le retrait
+et renvoie un message clair.
+
+La contrainte `ck_stock_quantity_positive` reste un filet de sécurité :
+même en cas d'erreur dans l'application, la base refuse toute quantité négative.
+
+### Mise à jour de `updated_at`
+
+La colonne `updated_at` est mise à jour par SQLAlchemy grâce à `onupdate=db.func.now()`
+dans les modèles. Aucun trigger PostgreSQL n'est nécessaire, car toutes les modifications
+passent par l'application.
