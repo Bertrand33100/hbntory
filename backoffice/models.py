@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Modèles SQLAlchemy du Backoffice HBntory."""
-from app import db
+from database import db
 
 
 class Branch(db.Model):
