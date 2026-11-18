@@ -157,7 +157,7 @@ La base est initialisée avec :
 - **au moins deux agences** (ex. `Paris`, `Lyon`) ;
 - **du stock d'exemple**, référençant des `id` existants de la Product API, pour tester le Backoffice et l'IA.
 
-*Le mécanisme exact d'initialisation (script ou migrations) sera précisé à l'étape 3 de la tâche 1.*
+*La base est initialisée par `backoffice/seed.py`, qui crée les tables avec `db.create_all()` puis ajoute les données de départ (voir `docs/decisions.md`, section 6).*
 
 ## Concurrence et dates de mise à jour
 
