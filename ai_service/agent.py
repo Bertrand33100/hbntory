@@ -1,10 +1,6 @@
 
 #!/usr/bin/env python3
-"""Agent IA du service AI Query Service de HBntory.
-
-Ce module coordonne OpenAI et les outils MCP pour répondre
-aux questions à partir des données disponibles du catalogue.
-"""
+"""Agent IA du service AI Query Service de HBntory."""
 
 import json
 import logging
@@ -23,48 +19,84 @@ MAX_TOOL_ROUNDS = 3
 INSTRUCTIONS_AGENT = """
 Tu es l'assistant du système HBntory.
 
-Ton rôle est de répondre aux questions concernant le catalogue
-des produits de l'entreprise.
+Ton rôle est de répondre aux questions concernant :
+- le catalogue des produits ;
+- les caractéristiques des produits ;
+- les stocks disponibles dans les agences ;
+- la disponibilité des produits dans une ou plusieurs agences.
 
 Règles obligatoires :
 
-1. Utilise les outils MCP pour obtenir les données produits.
-2. N'invente jamais un nom, un prix ou une caractéristique.
-3. Si une information est indisponible, indique-le clairement.
-4. Si la question est hors périmètre, explique-le clairement.
-5. Réponds en français de manière claire et concise.
-6. Base tes réponses uniquement sur les données disponibles.
-7. Ne prétends jamais connaître les stocks : les outils de stock
-   ne sont pas encore disponibles.
+1. Utilise les outils MCP pour obtenir les informations nécessaires.
+2. Utilise list_products pour consulter le catalogue.
+3. Utilise get_product pour obtenir les détails d'un produit.
+4. Utilise get_stock_by_product pour consulter le stock d'un
+   produit dans toutes les agences.
+5. Utilise get_stock_by_branch pour consulter les produits
+   et leurs quantités dans une agence.
+6. Pour vérifier une commande contenant plusieurs produits,
+   consulte les stocks de chaque produit et compare les quantités
+   demandées aux quantités disponibles.
+7. Une commande peut être satisfaite par plusieurs agences.
+8. N'invente jamais un nom, un prix, une caractéristique,
+   une quantité ou une disponibilité.
+9. Si un produit n'existe pas dans le catalogue, indique-le.
+10. Si une agence ou une information est indisponible,
+    indique-le clairement.
+11. Une quantité égale à zéro signifie que le produit
+    n'est pas disponible dans cette agence.
+12. Ne confonds jamais une absence de résultat avec un stock nul.
+13. Si un outil retourne une erreur, analyse son message.
+    Si le message indique qu'un produit est introuvable,
+    informe clairement l'utilisateur.
+14. Ne transforme jamais une erreur technique en quantité nulle.
+15. Pour les questions hors périmètre, explique clairement
+    que tu ne peux pas y répondre.
+16. Réponds en français de manière claire et concise.
+17. Base tes réponses uniquement sur les données retournées
+    par les outils disponibles.
+
+Pour les questions de disponibilité :
+- Présente les quantités par agence.
+- Indique si les quantités demandées sont suffisantes.
+- Ne prétends jamais qu'une commande est réservée ou confirmée.
 """
 
 
 OUTILS_AUTORISES = {
+    "list_products",
     "get_product",
-    "list_products"
+    "get_stock_by_product",
+    "get_stock_by_branch"
 }
 
 
 async def get_agent_context():
-    """Récupère les outils disponibles sur le serveur MCP.
-
-    Returns:
-        list[dict]: Liste des outils et de leurs paramètres.
-    """
+    """Récupère les outils autorisés disponibles sur MCP."""
     tools = await list_mcp_tools()
 
-    return [
+    outils_autorises = [
         tool for tool in tools
         if tool["name"] in OUTILS_AUTORISES
     ]
 
+    outils_disponibles = {
+        tool["name"] for tool in outils_autorises
+    }
+
+    outils_manquants = OUTILS_AUTORISES - outils_disponibles
+
+    if outils_manquants:
+        logger.warning(
+            "Outils MCP non disponibles : %s",
+            ", ".join(sorted(outils_manquants))
+        )
+
+    return outils_autorises
+
 
 async def build_openai_tools():
-    """Convertit les outils MCP au format attendu par OpenAI.
-
-    Returns:
-        list[dict]: Définitions des outils compatibles avec OpenAI.
-    """
+    """Convertit les outils MCP au format OpenAI."""
     mcp_tools = await get_agent_context()
 
     return [
@@ -79,39 +111,29 @@ async def build_openai_tools():
     ]
 
 
-async def execute_product_tool(tool_name, arguments=None):
-    """Exécute un outil produit autorisé sur le serveur MCP.
-
-    Args:
-        tool_name (str): Nom de l'outil à exécuter.
-        arguments (dict | None): Arguments transmis à l'outil.
-
-    Returns:
-        list: Données retournées par le serveur MCP.
-
-    Raises:
-        ValueError: Si l'outil demandé n'est pas autorisé.
-    """
+async def execute_mcp_tool(tool_name, arguments=None):
+    """Exécute un outil MCP autorisé."""
     if tool_name not in OUTILS_AUTORISES:
-        raise ValueError("Cet outil n'est pas autorisé.")
+        raise ValueError("Cet outil MCP n'est pas autorisé.")
 
     logger.info(
-        "Exécution de l'outil MCP : %s",
+        "Exécution de l'outil MCP : %s avec les arguments : %s",
+        tool_name,
+        arguments
+    )
+
+    result = await call_mcp_tool(tool_name, arguments)
+
+    logger.info(
+        "Résultat reçu de l'outil MCP : %s",
         tool_name
     )
 
-    return await call_mcp_tool(tool_name, arguments)
+    return result
 
 
 def format_tool_result(result):
-    """Convertit le résultat MCP en texte JSON.
-
-    Args:
-        result (list): Contenu retourné par l'outil MCP.
-
-    Returns:
-        str: Résultat sérialisé au format JSON.
-    """
+    """Convertit le résultat MCP en texte JSON."""
     formatted_result = []
 
     for item in result:
@@ -131,25 +153,34 @@ def format_tool_result(result):
     )
 
 
+def extract_error_messages(error):
+    """Extrait les messages des exceptions, y compris les groupes."""
+    messages = []
+
+    if isinstance(error, BaseExceptionGroup):
+        for nested_error in error.exceptions:
+            messages.extend(
+                extract_error_messages(nested_error)
+            )
+    else:
+        messages.append(str(error))
+
+    return messages
+
+
 async def ask_agent(question):
-    """Interroge l'agent et lui permet d'utiliser les outils MCP.
-
-    Args:
-        question (str): Question formulée par l'utilisateur.
-
-    Returns:
-        str: Réponse finale de l'agent.
-
-    Raises:
-        ValueError: Si la question est vide ou invalide.
-        RuntimeError: Si une erreur survient pendant le traitement.
-    """
+    """Interroge l'agent et lui permet d'utiliser les outils MCP."""
     if not isinstance(question, str) or not question.strip():
         raise ValueError("La question ne peut pas être vide.")
 
     try:
         client = create_openai_client()
         tools = await build_openai_tools()
+
+        logger.info(
+            "Nombre d'outils transmis à OpenAI : %s",
+            len(tools)
+        )
 
         response = client.responses.create(
             model=get_openai_model(),
@@ -159,12 +190,38 @@ async def ask_agent(question):
         )
 
         for round_number in range(MAX_TOOL_ROUNDS + 1):
+
+            logger.info(
+                "Cycle OpenAI numéro : %s",
+                round_number + 1
+            )
+
+            logger.info(
+                "Diagnostic OpenAI - statut : %s",
+                response.status
+            )
+
+            logger.info(
+                "Diagnostic OpenAI - types de sortie : %s",
+                [item.type for item in response.output]
+            )
+
+            logger.info(
+                "Diagnostic OpenAI - texte : %r",
+                response.output_text
+            )
+
             tool_calls = [
                 item for item in response.output
                 if item.type == "function_call"
             ]
 
             if not tool_calls:
+                if not response.output_text:
+                    raise RuntimeError(
+                        "L'agent IA n'a retourné aucun texte."
+                    )
+
                 return response.output_text
 
             if round_number >= MAX_TOOL_ROUNDS:
@@ -175,6 +232,7 @@ async def ask_agent(question):
             tool_outputs = []
 
             for tool_call in tool_calls:
+
                 if tool_call.name not in OUTILS_AUTORISES:
                     raise ValueError(
                         f"Outil non autorisé : {tool_call.name}"
@@ -182,15 +240,43 @@ async def ask_agent(question):
 
                 arguments = json.loads(tool_call.arguments)
 
-                result = await execute_product_tool(
+                logger.info(
+                    "Appel demandé par OpenAI : %s, arguments : %s",
                     tool_call.name,
                     arguments
                 )
 
+                try:
+                    result = await execute_mcp_tool(
+                        tool_call.name,
+                        arguments
+                    )
+
+                    output = format_tool_result(result)
+
+                except Exception as tool_error:
+                    error_messages = extract_error_messages(
+                        tool_error
+                    )
+
+                    logger.warning(
+                        "Erreur de l'outil MCP %s : %s",
+                        tool_call.name,
+                        error_messages
+                    )
+
+                    output = json.dumps(
+                        {
+                            "tool": tool_call.name,
+                            "error": error_messages
+                        },
+                        ensure_ascii=False
+                    )
+
                 tool_outputs.append({
                     "type": "function_call_output",
                     "call_id": tool_call.call_id,
-                    "output": format_tool_result(result)
+                    "output": output
                 })
 
             response = client.responses.create(
@@ -208,6 +294,7 @@ async def ask_agent(question):
         logger.exception(
             "Erreur pendant le traitement de la question."
         )
+
         raise RuntimeError(
             "Erreur pendant le traitement de la question."
         ) from error
