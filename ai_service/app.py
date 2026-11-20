@@ -3,10 +3,19 @@
 """Point d'entrée du service AI Query Service de HBntory."""
 
 import asyncio
+import logging
 import os
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+
+# Active les journaux INFO pour tous les modules.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s : %(message)s"
+)
 
 from ai_service.agent import ask_agent
 
@@ -17,7 +26,19 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 app = Flask(__name__)
 
+# Autorise le client web Live Server à appeler la route /ask.
+CORS(
+    app,
+    resources={
+        r"/ask": {
+            "origins": "http://localhost:5500"
+        }
+    }
+)
+
 app.logger.setLevel("INFO")
+
+
 @app.route("/health", methods=["GET"])
 def health_check():
     """Vérifie que le service AI Query Service fonctionne.
