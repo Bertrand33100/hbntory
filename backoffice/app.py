@@ -144,7 +144,7 @@ def list_stock():
 @app.route("/api/users", methods=["POST"])
 @role_required("admin")
 def create_user():
-    """Créer un utilisateur standart. Route réservée à l'admin."""
+    """Créer un utilisateur standard. Route réservée à l'admin."""
     data = request.get_json(silent=True) or {}
     username = data.get("username")
     password = data.get("password")
@@ -235,3 +235,19 @@ def deactivate_user(user_id):
     user.is_active = False
     db.session.commit()
     return {"message": "Utilisateur désactivé."}, 200
+
+
+@app.route("/api/stock/<int:product_id>", methods=["GET"])
+@role_required("common_user")
+def get_stock(product_id):
+    """Renvoie la quantité d'un produit dans l'agence de l'utilisateur"""
+    user = get_current_user()
+    item = Stock.query.filter_by(
+        branch_id=user.branch_id, product_id=product_id
+    ).first()
+    quantity = item.available_quantity if item else 0
+    return {
+        "branch_id": user.branch_id,
+        "product_id": product_id,
+        "available_quantity": quantity,
+    }, 200
