@@ -198,3 +198,25 @@ def change_password(user_id):
     user.password_hash = password_hasher.hash(password)
     db.session.commit()
     return {"message": "Mot de passe modifié."}, 200
+
+
+@app.route("/api/users/<int:user_id>/branch", methods=["PUT"])
+@role_required("admin")
+def change_branch(user_id):
+    """Change l'agence d'un utilisateur standard (admin)."""
+    user = db.session.get(User, user_id)
+    if user is None:
+        return {"error": "Utilisateur introuvable."}, 404
+    if user.role != "common_user":
+        return {"error": "Utilisateur non modifiable."}, 400
+
+    data = request.get_json(silent=True) or {}
+    branch_id = data.get("branch_id")
+    if not isinstance(branch_id, int):
+        return {"error": "L'agence doit être un identifiant numérique."}, 400
+    if db.session.get(Branch, branch_id) is None:
+        return {"error": "Agence inexistante."}, 400
+
+    user.branch_id = branch_id
+    db.session.commit()
+    return {"message": "Agence modifiée.", "branch_id": branch_id}, 200
