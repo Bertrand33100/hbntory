@@ -178,3 +178,23 @@ def create_user():
         "branch_id": user.branch_id,
         "is_active": user.is_active,
     }, 201
+
+
+@app.route("/api/users/<int:user_id>/password", methods=["PUT"])
+@role_required("admin")
+def change_password(user_id):
+    """Change le mot de passe d'un utilisateur standard (admin)."""
+    user = db.session.get(User, user_id)
+    if user is None:
+        return {"error": "Utilisateur introuvable."}, 404
+    if user.role != "common_user":
+        return {"error": "Utilisateur non modifiable."}, 400
+
+    data = request.get_json(silent=True) or {}
+    password = data.get("password")
+    if not password or len(password) < 8:
+        return {"error": "Mot de passe : 8 caractères minimum."}, 400
+
+    user.password_hash = password_hasher.hash(password)
+    db.session.commit()
+    return {"message": "Mot de passe modifié."}, 200
