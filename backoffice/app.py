@@ -4,16 +4,21 @@ import os
 from functools import wraps
 
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import InvalidHashError, VerificationError
 from flask import Flask, request, session
 
 from database import db
 from models import Stock, User
 
 app = Flask(__name__)
+
 # Les secrets viennent de l'environnement, jamais du code
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+# Protection du cookie de session (SameSite limite le CSRF)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE") == "1"
 
 db.init_app(app)
 password_hasher = PasswordHasher()
@@ -76,7 +81,7 @@ def login():
 
     try:
         password_hasher.verify(user.password_hash, password)
-    except VerifyMismatchError:
+    except (InvalidHashError, VerificationError):
         return {"error": "Identifiants invalides."}, 401
 
     if not user.is_active:
