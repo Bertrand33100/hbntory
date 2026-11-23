@@ -144,7 +144,7 @@ def list_stock():
 @app.route("/api/users", methods=["POST"])
 @role_required("admin")
 def create_user():
-    """Créer un utilisateur standard. Route réservée à l'admin."""
+    """Crée un utilisateur standard. Route réservée à l'admin."""
     data = request.get_json(silent=True) or {}
     username = data.get("username")
     password = data.get("password")
@@ -250,4 +250,39 @@ def get_stock(product_id):
         "branch_id": user.branch_id,
         "product_id": product_id,
         "available_quantity": quantity,
+    }, 200
+
+
+@app.route("/api/stock/add", methods=["POST"])
+@role_required("common_user")
+def add_stock():
+    """AJoute une quantité d'un produit au stock de l'agence """
+    user = get_current_user()
+    data = request.get_json(silent=True) or {}
+    product_id = data.get("product_id")
+    quantity = data.get("quantity")
+
+    if not isinstance(product_id, int) or not isinstance(quantity, int):
+        return {"error": "Produit et quantité doivent être des entiers."}, 400
+    if quantity <= 0:
+        return {"error": "La quantité doit être positive."}, 400
+
+    item = Stock.query.filter_by(
+        branch_id=user.branch_id, product_id=product_id
+    ).first()
+    if item is None:
+        item = Stock(
+            branch_id=user.branch_id,
+            product_id=product_id,
+            available_quantity=quantity,
+        )
+        db.session.add(item)
+    else:
+        item.available_quantity = Stock.available_quantity + quantity
+    db.session.commit()
+
+    return {
+        "branch_id": user.branch_id,
+        "product_id": product_id,
+        "available_quantity": item.available_quantity,
     }, 200
