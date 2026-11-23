@@ -101,6 +101,39 @@ async def get_product(product_id: str) -> dict:
 
 
 @mcp.tool
+def list_branches() -> dict:
+    """Récupère la liste des agences et leurs identifiants."""
+    engine = get_database_connection()
+
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(
+                text("""
+                    SELECT id, name
+                    FROM branches
+                    ORDER BY name
+                """)
+            )
+
+            branches = [
+                dict(row)
+                for row in result.mappings().all()
+            ]
+
+            return {
+                "branches": branches
+            }
+
+    except SQLAlchemyError as error:
+        raise RuntimeError(
+            "Impossible de récupérer les agences dans PostgreSQL."
+        ) from error
+
+    finally:
+        engine.dispose()
+
+
+@mcp.tool
 def get_stock_by_product(product_id: int) -> dict:
     """Récupère le stock d'un produit dans toutes les agences."""
     if not isinstance(product_id, int) or isinstance(product_id, bool):
