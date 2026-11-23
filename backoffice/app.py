@@ -8,7 +8,7 @@ from argon2.exceptions import VerifyMismatchError
 from flask import Flask, request, session
 
 from database import db
-from models import Stock, User
+from models import Branch, Stock, User
 
 app = Flask(__name__)
 # Les secrets viennent de l'environnement, jamais du code
@@ -139,3 +139,42 @@ def list_stock():
         }
         for item in stock_items
     ], 200
+
+
+@app.route("/api/users", methods=["POST"])
+@role_required("admin")
+def create_user():
+    """Créer un utilisateur standart. Route réservée à l'admin."""
+    data = request.get_json(silent=True) or {}
+    username = data.get("username")
+    password = data.get("password")
+    branch_id = data.get("branch_id")
+
+    if not username or not password or branch_id is None:
+        return {"error": "Nom, mot de passe et agence requis."}, 400
+    if len(password) < 8:
+        return {"error": "Mot de passe : 8 caractères minimum."}, 400
+    if not isinstance(branch_id, int):
+        return {"error": "L'identifiant de l'agence doit être un entier."}, 400
+
+    if db.session.get(Branch, branch_id) is None:
+        return {"error": "Agence inexistante."}, 400
+    if User.query.filter_by(username=username).first() is not None:
+        return {"error": "Nom d'utilisateur déjà utilisé."}, 409
+
+    user = User(
+        username=username,
+        password_hash=password_hasher.hash(password),
+        role="common_user",
+        branch_id=branch_id,
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "branch_id": user.branch_id,
+        "is_active": user.is_active,
+    }, 201
