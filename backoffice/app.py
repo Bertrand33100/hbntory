@@ -6,6 +6,7 @@ from functools import wraps
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask import Flask, request, session
+from sqlalchemy import update
 
 from database import db
 from models import Branch, Stock, User
@@ -256,7 +257,7 @@ def get_stock(product_id):
 @app.route("/api/stock/add", methods=["POST"])
 @role_required("common_user")
 def add_stock():
-    """AJoute une quantité d'un produit au stock de l'agence """
+    """Ajoute une quantité d'un produit au stock de l'agence """
     user = get_current_user()
     data = request.get_json(silent=True) or {}
     product_id = data.get("product_id")
@@ -281,6 +282,44 @@ def add_stock():
         item.available_quantity = Stock.available_quantity + quantity
     db.session.commit()
 
+    return {
+        "branch_id": user.branch_id,
+        "product_id": product_id,
+        "available_quantity": item.available_quantity,
+    }, 200
+
+
+@app.route("/api/stock/remove", methods=["POST"])
+@role_required("common_user")
+def remove_stock():
+    """Retire une quantité d'un produit du stock de l'agence."""
+    user = get_current_user()
+    data = request.get_json(silent=True) or {}
+    product_id = data.get("product_id")
+    quantity = data.get("quantity")
+
+    if not isinstance(product_id, int) or not isinstance(quantity, int):
+        return {"error": "Produit et quantité doivent être des entiers."}, 400
+    if quantity <= 0:
+        return {"error": "La quantité doit être positive."}, 400
+
+    result = db.session.execute(
+        update(Stock)
+        .where(
+            Stock.branch_id == user.branch_id,
+            Stock.product_id == product_id,
+            Stock.available_quantity >= quantity,
+        )
+        .values(available_quantity=Stock.available_quantity - quantity)
+    )
+    if result.rowcount == 0:
+        db.session.rollback()
+        return {"error": "Stock insuffisant."}, 409
+    db.session.commit()
+
+    item = Stock.query.filter_by(
+        branch_id=user.branch_id, product_id=product_id
+    ).first()
     return {
         "branch_id": user.branch_id,
         "product_id": product_id,
