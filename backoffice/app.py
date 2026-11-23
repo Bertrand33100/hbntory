@@ -220,3 +220,18 @@ def change_branch(user_id):
     user.branch_id = branch_id
     db.session.commit()
     return {"message": "Agence modifiée.", "branch_id": branch_id}, 200
+
+
+@app.route("/api/users/<int:user_id>", methods=["DELETE"])
+@role_required("admin")
+def deactivate_user(user_id):
+    """Désactive un utilisateur standard (suppression douce, admin)."""
+    user = db.session.get(User, user_id)
+    if user is None:
+        return {"error": "Utilisateur introuvable."}, 404
+    if user.role != "common_user":
+        return {"error": "Utilisateur non modifiable."}, 400
+
+    user.is_active = False
+    db.session.commit()
+    return {"message": "Utilisateur désactivé."}, 200
