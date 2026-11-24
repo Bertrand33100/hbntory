@@ -6,6 +6,7 @@ from functools import wraps
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask import Flask, request, session
+import requests
 from sqlalchemy import update
 
 from database import db
@@ -17,7 +18,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 db.init_app(app)
+
 password_hasher = PasswordHasher()
+PRODUCT_API_URL = os.environ.get("PRODUCT_API_URL", "http://localhost:5001")
 
 
 def get_current_user():
@@ -57,6 +60,21 @@ def role_required(role):
             return view(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def fetch_products():
+    """Récupère le catalogue de la Product API, indexé par id, ou None."""
+    try:
+        response = requests.get(
+            f"{PRODUCT_API_URL}/api/v1/products",
+            params={"limit": 100, "include_discontinued": "true"},
+            timeout=5,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+    products = response.json()["results"]
+    return {product["id"]: product for product in products}
 
 
 @app.route("/api/login", methods=["POST"])
@@ -325,3 +343,33 @@ def remove_stock():
         "product_id": product_id,
         "available_quantity": item.available_quantity,
     }, 200
+
+
+@app.route("/api/stock/products", methods=["GET"])
+@role_required("common_user")
+def list_products_in_stock():
+    """Liste les produits en stock de l'agence, avec leurs détails."""
+    user = get_current_user()
+    stock_items = Stock.query.filter(
+        Stock.branch_id == user.branch_id,
+        Stock.available_quantity > 0,
+    ).all()
+
+    catalog = fetch_products()
+
+    products = []
+    for item in stock_items:
+        product = catalog.get(item.product_id) if catalog else None
+        products.append({
+            "product_id": item.product_id,
+            "name": product["name"] if product else None,
+            "sku": product["sku"] if product else None,
+            "available_quantity": item.available_quantity,
+        })
+
+    return {
+        "branch_id": user.branch_id,
+        "product_api_available": catalog is not None,
+        "products": products,
+    }, 200
+
