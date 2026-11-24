@@ -400,3 +400,16 @@ def list_catalog():
         }
         for product in catalog.values()
     ], 200
+
+@app.route("/", methods=["GET"])
+def index():
+    """Sert la page de l'interface du Backoffice."""
+    return app.send_static_file("index.html")
+
+
+@app.route("/api/branches", methods=["GET"])
+@login_required
+def list_branches():
+    """Liste les agences, pour les menus et le bandeau."""
+    branches = Branch.query.order_by(Branch.id).all()
+    return [{"id": branch.id, "name": branch.name} for branch in branches], 200

@@ -1,0 +1,280 @@
+/* =================================
+   HBNTORY - THEME MIDNIGHT TECH
+   Backoffice : même thème que le client web,
+   avec les éléments propres au Backoffice
+   ================================= */
+
+/* 1. Couleurs principales (identiques au client web) */
+
+:root {
+    --color-dark: #101D32;
+    --color-deep: #1D3654;
+    --color-blue: #326B91;
+    --color-cyan: #69B5C8;
+    --color-light: #EAF2F6;
+    --color-white: #FFFFFF;
+    --color-text: #26384A;
+    --color-muted: #718096;
+    --color-border: #DCE6ED;
+    --color-success: #2F855A;
+    --color-error: #C53030;
+    --color-warning: #B7791F;
+}
+
+/* 2. Réglages généraux */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--color-light);
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 3. En-tête */
+
+header {
+    background-color: var(--color-dark);
+    color: var(--color-white);
+    text-align: center;
+    padding: 35px 20px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 36px;
+    letter-spacing: 1px;
+}
+
+header p {
+    color: #C5D6E5;
+    margin-bottom: 0;
+}
+
+/* Bandeau : utilisateur connecté et agence */
+.session-bar {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.session-bar span {
+    color: var(--color-cyan);
+    font-weight: bold;
+}
+
+/* 4. Contenu principal */
+
+main {
+    width: 90%;
+    max-width: 850px;
+    margin: 45px auto;
+}
+
+/* 5. Cartes et sections */
+
+section {
+    background-color: var(--color-white);
+    padding: 30px;
+    margin-bottom: 25px;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(16, 29, 50, 0.06);
+}
+
+section h2 {
+    color: var(--color-dark);
+    margin-top: 0;
+}
+
+/* 6. Formulaires */
+
+form {
+    display: flex;
+    gap: 12px;
+}
+
+.form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+input,
+select {
+    flex: 1;
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    background-color: var(--color-white);
+    color: var(--color-text);
+}
+
+input:focus,
+select:focus {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(50, 107, 145, 0.12);
+}
+
+/* 7. Boutons */
+
+button {
+    background-color: var(--color-blue);
+    color: var(--color-white);
+    border: none;
+    border-radius: 10px;
+    padding: 15px 24px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: var(--color-deep);
+}
+
+.button-row {
+    display: flex;
+    gap: 12px;
+}
+
+.button-row button {
+    flex: 1;
+}
+
+.button-danger {
+    background-color: var(--color-error);
+}
+
+.button-danger:hover {
+    background-color: #9B2C2C;
+}
+
+.button-light {
+    background-color: transparent;
+    border: 1px solid var(--color-cyan);
+    padding: 8px 16px;
+}
+
+.button-light:hover {
+    background-color: var(--color-deep);
+}
+
+/* 8. Tableaux */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+th {
+    color: var(--color-muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.badge-active {
+    background-color: #E6F4EA;
+    color: var(--color-success);
+}
+
+.badge-inactive {
+    background-color: #FDECEC;
+    color: var(--color-error);
+}
+
+/* 9. Messages et résultats */
+
+.message {
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    font-weight: bold;
+}
+
+.message.success {
+    background-color: #E6F4EA;
+    color: var(--color-success);
+    border-left: 4px solid var(--color-success);
+}
+
+.message.error {
+    background-color: #FDECEC;
+    color: var(--color-error);
+    border-left: 4px solid var(--color-error);
+}
+
+.warning {
+    color: var(--color-warning);
+    font-weight: bold;
+}
+
+.result {
+    background-color: var(--color-light);
+    border-left: 4px solid var(--color-cyan);
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 0;
+}
+
+/* 10. Adaptation aux mobiles */
+
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 28px;
+    }
+
+    main {
+        width: 94%;
+        margin: 25px auto;
+    }
+
+    section {
+        padding: 20px;
+    }
+
+    form,
+    .button-row {
+        flex-direction: column;
+    }
+
+    button {
+        width: 100%;
+    }
+
+    th,
+    td {
+        padding: 10px 6px;
+        font-size: 14px;
+    }
+}
