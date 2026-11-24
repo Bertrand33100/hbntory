@@ -259,7 +259,7 @@ def deactivate_user(user_id):
 @app.route("/api/stock/<int:product_id>", methods=["GET"])
 @role_required("common_user")
 def get_stock(product_id):
-    """Renvoie la quantité d'un produit dans l'agence de l'utilisateur"""
+    """Renvoie la quantité d'un produit dans l'agence de l'utilisateur."""
     user = get_current_user()
     item = Stock.query.filter_by(
         branch_id=user.branch_id, product_id=product_id
@@ -275,7 +275,7 @@ def get_stock(product_id):
 @app.route("/api/stock/add", methods=["POST"])
 @role_required("common_user")
 def add_stock():
-    """Ajoute une quantité d'un produit au stock de l'agence """
+    """Ajoute une quantité d'un produit au stock de l'agence."""
     user = get_current_user()
     data = request.get_json(silent=True) or {}
     product_id = data.get("product_id")
@@ -285,6 +285,13 @@ def add_stock():
         return {"error": "Produit et quantité doivent être des entiers."}, 400
     if quantity <= 0:
         return {"error": "La quantité doit être positive."}, 400
+
+    # Le produit doit exister dans la Product API
+    catalog = fetch_products()
+    if catalog is None:
+        return {"error": "Product API indisponible."}, 503
+    if product_id not in catalog:
+        return {"error": "Produit inconnu."}, 404
 
     item = Stock.query.filter_by(
         branch_id=user.branch_id, product_id=product_id
@@ -297,6 +304,7 @@ def add_stock():
         )
         db.session.add(item)
     else:
+        # L'addition est faite par la base elle-même, en une seule opération
         item.available_quantity = Stock.available_quantity + quantity
     db.session.commit()
 
@@ -321,6 +329,7 @@ def remove_stock():
     if quantity <= 0:
         return {"error": "La quantité doit être positive."}, 400
 
+    # Vérification et retrait en une seule opération (atomique)
     result = db.session.execute(
         update(Stock)
         .where(
@@ -355,6 +364,7 @@ def list_products_in_stock():
         Stock.available_quantity > 0,
     ).all()
 
+    # Les détails des produits viennent de la Product API, jamais de la base
     catalog = fetch_products()
 
     products = []
@@ -373,3 +383,20 @@ def list_products_in_stock():
         "products": products,
     }, 200
 
+
+@app.route("/api/products", methods=["GET"])
+@role_required("common_user")
+def list_catalog():
+    """Liste le catalogue de la Product API, pour le sélecteur."""
+    catalog = fetch_products()
+    if catalog is None:
+        return {"error": "Product API indisponible."}, 503
+    return [
+        {
+            "product_id": product["id"],
+            "sku": product["sku"],
+            "name": product["name"],
+            "discontinued": product["discontinued"],
+        }
+        for product in catalog.values()
+    ], 200
