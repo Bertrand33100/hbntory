@@ -401,6 +401,7 @@ def list_catalog():
         for product in catalog.values()
     ], 200
 
+
 @app.route("/", methods=["GET"])
 def index():
     """Sert la page de l'interface du Backoffice."""
