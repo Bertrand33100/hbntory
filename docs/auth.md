@@ -41,6 +41,17 @@ gère le cookie automatiquement, sans code côté client pour stocker ou renvoye
 La déconnexion est immédiate, et un compte désactivé est refusé dès la requête suivante,
 puisque l'utilisateur est relu en base à chaque requête.
 
+**Protection du cookie et du CSRF**
+- `SESSION_COOKIE_HTTPONLY` : le cookie n'est pas lisible par le JavaScript de la page.
+- `SESSION_COOKIE_SAMESITE = "Lax"` : le navigateur n'envoie pas le cookie avec les requêtes
+  `POST` venant d'un autre site. C'est notre protection contre le CSRF.
+- Nos routes n'acceptent que du JSON : un formulaire piégé sur un autre site ne peut pas en envoyer.
+- `SESSION_COOKIE_SECURE` : réglable par la variable `COOKIE_SECURE`. Désactivé par défaut,
+  puisque le projet tourne en HTTP (HTTPS n'est pas exigé), à activer en production.
+
+Nous n'avons pas ajouté de jetons CSRF : SameSite et le format JSON suffisent pour notre usage,
+sans compliquer l'interface.
+
 ## 3. Autorisation par rôle, côté backend
 
 Les règles sont appliquées dans le backend par deux décorateurs, placés au-dessus des routes.
