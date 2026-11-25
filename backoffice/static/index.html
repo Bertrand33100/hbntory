@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HBntory - Backoffice</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+
+    <!-- En-tête : qui est connecté, et sur quelle agence -->
+    <header>
+        <h1>HBntory</h1>
+        <p>Backoffice de gestion des stocks</p>
+        <div id="session-bar" class="session-bar hidden">
+            <span id="session-info"></span>
+            <button id="logout-button" class="button-light">Se déconnecter</button>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- Messages de réussite ou d'erreur -->
+        <div id="message" class="message hidden" role="status"></div>
+
+        <!-- 1. Connexion -->
+        <section id="login-section">
+            <h2>Connexion</h2>
+            <form id="login-form" class="form-stack">
+                <input id="login-username" type="text" placeholder="Nom d'utilisateur" autocomplete="username" required>
+                <input id="login-password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+                <button type="submit">Se connecter</button>
+            </form>
+        </section>
+
+        <!-- 2. Espace de l'utilisateur standard : le stock de SON agence -->
+        <div id="user-panel" class="hidden">
+
+            <section>
+                <h2>Stock de l'agence <span id="branch-name"></span></h2>
+                <p id="api-warning" class="warning hidden">
+                    La Product API ne répond pas : les noms des produits sont indisponibles pour le moment.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>SKU</th>
+                            <th>N°</th>
+                            <th>Quantité</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stock-body"></tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2>Ajouter ou retirer du stock</h2>
+                <form id="stock-form" class="form-stack">
+                    <select id="stock-product" required></select>
+                    <input id="stock-quantity" type="number" min="1" step="1" placeholder="Quantité" required>
+                    <div class="button-row">
+                        <button type="button" id="add-button">Ajouter</button>
+                        <button type="button" id="remove-button" class="button-danger">Retirer</button>
+                    </div>
+                </form>
+            </section>
+
+            <section>
+                <h2>Consulter un produit</h2>
+                <form id="check-form">
+                    <select id="check-product" required></select>
+                    <button type="submit">Consulter</button>
+                </form>
+                <p id="check-result" class="result hidden"></p>
+            </section>
+
+        </div>
+
+        <!-- 3. Espace de l'admin : la gestion des utilisateurs -->
+        <div id="admin-panel" class="hidden">
+
+            <section>
+                <h2>Utilisateurs</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Nom</th>
+                            <th>Rôle</th>
+                            <th>Agence</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-body"></tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2>Créer un utilisateur</h2>
+                <form id="create-form" class="form-stack">
+                    <input id="create-username" type="text" placeholder="Nom d'utilisateur" required>
+                    <input id="create-password" type="password" placeholder="Mot de passe (8 caractères minimum)" minlength="8" required>
+                    <select id="create-branch" required></select>
+                    <button type="submit">Créer</button>
+                </form>
+            </section>
+
+            <section>
+                <h2>Modifier un utilisateur</h2>
+                <div class="form-stack">
+                    <select id="edit-user"></select>
+
+                    <form id="branch-form">
+                        <select id="edit-branch" required></select>
+                        <button type="submit">Changer l'agence</button>
+                    </form>
+
+                    <form id="password-form">
+                        <input id="edit-password" type="password" placeholder="Nouveau mot de passe" minlength="8" required>
+                        <button type="submit">Changer le mot de passe</button>
+                    </form>
+
+                    <button type="button" id="deactivate-button" class="button-danger">Désactiver cet utilisateur</button>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+</body>
+</html>
