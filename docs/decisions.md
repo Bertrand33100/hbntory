@@ -53,14 +53,52 @@ Le sujet précise qu'il n'est pas attendu de choisir l'option la plus complexe, 
 - produits, via la Product API (`list_products`, `get_product`) ;
 - stock, via la base de données (`get_stock_by_product`, `get_stock_by_branch`).
 
-**Bénéfice principal :** accès contrôlé. L'IA ne peut exécuter que les requêtes prévues dans nos outils, en lecture seule. Un seul serveur MCP à développer, déployer et maintenir.
+La modification des stocks reste exclusivement assurée par le Backoffice.
 
-**Limite principale :** plus de code à écrire qu'avec un outil existant, et l'IA est limitée aux questions prévues par nos outils. Ils doivent donc couvrir les questions d'exemple du sujet.
+**Bénéfice principal :** c'est l'une des deux options explicitement proposées par la section « MCP Requirements » du sujet. L'IA a un point d'accès unique aux données : elle ne peut exécuter que les requêtes prévues dans nos outils, en lecture seule, et n'accède jamais directement à la base.
+
+**Limite principale :** le serveur MCP regroupe deux responsabilités (appeler l'API externe et lire la base), et l'IA est limitée aux questions prévues par nos outils, qui doivent donc couvrir les questions d'exemple du sujet.
 
 **Alternatives écartées :**
-- **MCP Toolbox for Databases** (MCP tiers) : outil standard, configurable en YAML avec des requêtes prédéfinies. Écarté car il ajoute un service et un outil à apprendre, et l'agent devrait se connecter à deux serveurs MCP.
-- **Un second serveur MCP dédié au stock** : meilleure séparation des responsabilités, et accès à la base limité au seul composant qui en a besoin. Écarté pour limiter le nombre de services à développer et à déployer.
-- **Une fonction interne au service AI Query (« Stock Query »)** qui lit directement PostgreSQL en lecture seule : autorisée par la section « AI Query Service » du sujet (« depuis la base relationnelle ou via une intégration MCP »). Écartée pour rester dans les deux options proposées par la section « MCP Requirements », et pour que le service IA n'ait aucun accès direct à la base : toutes les données passent par les outils MCP.
+- **Une fonction interne au service AI Query (« Stock Query »)** lisant directement PostgreSQL : autorisée par la section « AI Query Service » du sujet (« depuis la base relationnelle ou via une intégration MCP »), et plus nette en séparation des responsabilités. Écartée pour rester dans les options de la section « MCP Requirements » et pour que le service IA n'ait aucun accès direct à la base.
+- **Un second serveur MCP dédié au stock** : meilleure séparation, mais un service de plus à développer et à déployer.
+- **MCP Toolbox for Databases** (MCP tiers) : outil standard configurable en YAML, mais un service et un outil de plus à apprendre, et l'agent devrait se connecter à deux serveurs MCP.
+
+---
+
+## 5. Framework du Backoffice : Flask
+
+**Option retenue :** Flask, avec l'extension Flask-SQLAlchemy.
+
+**Bénéfice principal :** framework simple et très répandu, déjà connu de l'équipe. Les routes, les réponses JSON et les sessions avec cookie (utilisées pour l'authentification) sont intégrées.
+
+**Limite principale :** Flask est minimaliste : certaines fonctionnalités (validation automatique des données reçues, documentation de l'API) doivent être écrites à la main ou ajoutées par des extensions.
+
+**Alternative écartée :** FastAPI, plus moderne et pensé pour les API (validation et documentation automatiques), mais moins connu de l'équipe, et moins direct pour la gestion des sessions avec cookie.
+
+---
+
+## 6. Création des tables : `db.create_all()` + script d'initialisation
+
+**Option retenue :** les tables sont créées par `db.create_all()` à partir des modèles SQLAlchemy, puis un script d'initialisation (`backoffice/seed.py`) ajoute les données de départ : l'admin, au moins deux agences et du stock d'exemple.
+
+**Bénéfice principal :** simple et rapide à mettre en place, et suffisant pour un schéma stable. Le sujet accepte explicitement « un script d'initialisation ou une stratégie de migration ». Le script est fiable : s'il a déjà été exécuté (l'admin existe), il ne modifie rien, et toutes les données sont enregistrées en une seule transaction (tout ou rien).
+
+**Limite principale :** `create_all()` crée les tables manquantes mais ne modifie pas une table existante. Pour changer le schéma, il faut recréer la base de développement.
+
+**Alternative écartée :** les migrations avec Alembic (Flask-Migrate), qui versionnent chaque évolution du schéma. Plus adaptées à une base en production qui évolue, mais une notion supplémentaire à apprendre pour un projet de deux semaines. Ce serait le choix à faire en production.
+
+---
+
+## 7. Hachage des mots de passe : Argon2id
+
+**Option retenue :** Argon2id, avec la bibliothèque `argon2-cffi`.
+
+**Bénéfice principal :** algorithme conçu pour le stockage des mots de passe et recommandé aujourd'hui. Il intègre un sel aléatoire (deux mots de passe identiques donnent deux hashs différents), et il est volontairement coûteux en temps et en mémoire, ce qui freine fortement les attaques par force brute.
+
+**Limite principale :** une bibliothèque externe de plus, et un hachage volontairement lent (quelques dizaines de millisecondes par connexion), ce qui est négligeable pour un Backoffice interne.
+
+**Alternative écartée :** le hachage intégré à Flask (`werkzeug.security`), sans dépendance supplémentaire, mais moins facile à justifier précisément.
 
 ---
 
@@ -68,6 +106,8 @@ Le sujet précise qu'il n'est pas attendu de choisir l'option la plus complexe, 
 
 | Sujet | Choix | Raison |
 | --- | --- | --- |
-| Base de données | PostgreSQL | Base relationnelle robuste, disponible en conteneur Docker |
-| Accès à la base | SQLAlchemy | Imposé par le sujet pour le Backoffice |
-| Hachage des mots de passe | À définir (tâche 2) | Sera choisi et justifié avec l'authentification |
+| Base de données | PostgreSQL | Base relationnelle robuste, disponible en conteneur Docker, accessible par le Backoffice et le serveur MCP |
+| Accès à la base | SQLAlchemy (via Flask-SQLAlchemy) | Imposé par le sujet pour le Backoffice |
+| Identifiant produit stocké | `id` numérique de la Product API | Accepté directement par la route de détail ; détails dans `product-api.md` |
+| Configuration sensible | Variables d'environnement (`DATABASE_URL`, mot de passe initial de l'admin, `PRODUCT_API_URL`) | Aucun mot de passe ni adresse sensible dans le code ou sur GitHub |
+| Historique des mouvements de stock | Non implémenté dans le MVP (liste 2) | Mentionné par le contrat de la Product API, mais non exigé par le sujet |

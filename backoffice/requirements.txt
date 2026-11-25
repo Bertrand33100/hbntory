@@ -1,0 +1,5 @@
+Flask
+Flask-SQLAlchemy
+psycopg[binary]
+argon2-cffi
+requests

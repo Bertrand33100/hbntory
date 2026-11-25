@@ -1,0 +1,804 @@
+
+/* =========================================================
+   HBNTORY — FUTURISTIC HOLOGRAPHIC EXPERIENCE
+   Structure HTML conservée
+   ========================================================= */
+
+/* 1. IDENTITÉ VISUELLE */
+
+:root {
+    --background: #080D1B;
+    --surface: #0F172A;
+    --surface-card: #111A2E;
+    --surface-light: #17243B;
+
+    --blue: #2563EB;
+    --blue-light: #3B82F6;
+    --cyan: #22D3EE;
+    --cyan-light: #67E8F9;
+
+    --text: #F8FAFC;
+    --muted: #94A3B8;
+    --border: rgba(148, 163, 184, 0.16);
+    --success: #22C55E;
+    --danger: #F87171;
+
+    --glow-blue: rgba(37, 99, 235, 0.35);
+    --glow-cyan: rgba(34, 211, 238, 0.25);
+
+    --font: "Inter", sans-serif;
+}
+
+/* 2. RESET */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        radial-gradient(
+            ellipse at 50% -15%,
+            rgba(37, 99, 235, 0.20),
+            transparent 48%
+        ),
+        radial-gradient(
+            ellipse at 85% 55%,
+            rgba(34, 211, 238, 0.07),
+            transparent 35%
+        ),
+        var(--background);
+
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+/* 3. FOND TECHNOLOGIQUE */
+
+body::before {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    content: "";
+    pointer-events: none;
+
+    background-image:
+        linear-gradient(
+            rgba(34, 211, 238, 0.035) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(34, 211, 238, 0.035) 1px,
+            transparent 1px
+        );
+
+    background-size: 55px 55px;
+
+    mask-image: linear-gradient(
+        to bottom,
+        black,
+        transparent 90%
+    );
+}
+
+body::after {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    content: "";
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            transparent 0,
+            rgba(8, 13, 27, 0.15) 65%,
+            rgba(8, 13, 27, 0.55) 100%
+        );
+}
+
+/* 4. EN-TÊTE */
+
+header {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 360px;
+    padding: 75px 24px 85px;
+
+    overflow: hidden;
+    isolation: isolate;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            ellipse at 50% 100%,
+            rgba(37, 99, 235, 0.25),
+            transparent 55%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(15, 23, 42, 0.96),
+            rgba(8, 13, 27, 0.85)
+        );
+
+    border-bottom: 1px solid var(--border);
+}
+
+/* Halo central */
+
+header::before {
+    position: absolute;
+    z-index: -1;
+    top: 45%;
+    left: 50%;
+
+    width: 360px;
+    height: 360px;
+
+    content: "";
+    border-radius: 50%;
+
+    background: rgba(34, 211, 238, 0.10);
+    filter: blur(90px);
+
+    transform: translate(-50%, -50%);
+    animation: brain-pulse 5s ease-in-out infinite;
+}
+
+/* Anneaux holographiques */
+
+header::after {
+    position: absolute;
+    z-index: -1;
+    top: 50%;
+    left: 50%;
+
+    width: 290px;
+    height: 110px;
+
+    content: "";
+
+    border: 1px solid rgba(34, 211, 238, 0.28);
+    border-radius: 50%;
+
+    box-shadow:
+        0 0 25px rgba(34, 211, 238, 0.10),
+        inset 0 0 25px rgba(34, 211, 238, 0.08);
+
+    transform: translate(-50%, -50%) rotate(-20deg);
+    animation: orbit-glow 8s linear infinite;
+}
+
+header h1 {
+    position: relative;
+    z-index: 1;
+
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    line-height: 1.15;
+
+    color: var(--text);
+
+    background: linear-gradient(
+        110deg,
+        #FFFFFF 15%,
+        var(--cyan) 48%,
+        var(--blue-light) 75%,
+        #FFFFFF 95%
+    );
+
+    background-size: 220% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    filter: drop-shadow(0 0 22px rgba(34, 211, 238, 0.24));
+
+    animation:
+        title-appear 1s ease both,
+        title-shimmer 7s linear infinite;
+}
+
+header p {
+    position: relative;
+    z-index: 1;
+
+    max-width: 650px;
+    margin-top: 20px;
+
+    color: var(--muted);
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    letter-spacing: 0.04em;
+
+    animation: fade-up 1s 200ms ease both;
+}
+
+/* 5. CONTENU PRINCIPAL */
+
+main {
+    width: min(92%, 1050px);
+    margin: 85px auto 110px;
+}
+
+/* 6. CARTES */
+
+section {
+    position: relative;
+
+    padding: 38px;
+    margin-bottom: 30px;
+
+    overflow: hidden;
+
+    border: 1px solid var(--border);
+    border-radius: 22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(17, 26, 46, 0.95),
+            rgba(15, 23, 42, 0.92)
+        );
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+    backdrop-filter: blur(18px);
+
+    transition:
+        border-color 350ms ease,
+        box-shadow 350ms ease,
+        transform 350ms ease;
+
+    animation: section-appear 850ms ease both;
+}
+
+section:hover {
+    border-color: rgba(34, 211, 238, 0.35);
+
+    box-shadow:
+        0 30px 85px rgba(0, 0, 0, 0.32),
+        0 0 35px rgba(34, 211, 238, 0.055),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    transform: translateY(-3px);
+}
+
+section:nth-child(2) {
+    animation-delay: 150ms;
+}
+
+section h2 {
+    position: relative;
+
+    margin-bottom: 25px;
+
+    color: var(--text);
+    font-size: clamp(1.25rem, 3vw, 1.6rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+}
+
+section h2::after {
+    display: block;
+
+    width: 48px;
+    height: 3px;
+
+    margin-top: 12px;
+
+    content: "";
+
+    border-radius: 10px;
+
+    background: linear-gradient(
+        90deg,
+        var(--blue),
+        var(--cyan)
+    );
+
+    box-shadow: 0 0 15px var(--glow-cyan);
+}
+
+/* 7. FORMULAIRE */
+
+form {
+    display: flex;
+    align-items: stretch;
+    gap: 14px;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    min-height: 58px;
+
+    padding: 16px 20px;
+
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 13px;
+
+    outline: none;
+
+    color: var(--text);
+    background: rgba(8, 13, 27, 0.75);
+
+    font-family: inherit;
+    font-size: 16px;
+
+    box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.18);
+
+    transition:
+        border-color 250ms ease,
+        box-shadow 250ms ease,
+        background 250ms ease,
+        transform 250ms ease;
+}
+
+input::placeholder {
+    color: #718096;
+}
+
+input:hover:not(:disabled) {
+    border-color: rgba(34, 211, 238, 0.45);
+}
+
+input:focus {
+    border-color: var(--cyan);
+
+    background: rgba(8, 13, 27, 0.95);
+
+    box-shadow:
+        0 0 0 4px rgba(34, 211, 238, 0.09),
+        0 0 25px rgba(34, 211, 238, 0.12);
+
+    transform: translateY(-1px);
+}
+
+input:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* 8. BOUTON */
+
+button {
+    position: relative;
+    isolation: isolate;
+
+    min-width: 145px;
+    padding: 15px 25px;
+
+    overflow: hidden;
+
+    border: 1px solid rgba(103, 232, 249, 0.35);
+    border-radius: 13px;
+
+    color: #FFFFFF;
+
+    background: linear-gradient(
+        120deg,
+        var(--blue),
+        #1D4ED8 45%,
+        #0891B2
+    );
+
+    background-size: 200% 100%;
+
+    box-shadow:
+        0 7px 24px rgba(37, 99, 235, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 250ms ease,
+        box-shadow 250ms ease,
+        background-position 350ms ease,
+        opacity 250ms ease;
+}
+
+button::before {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: -120%;
+
+    width: 80%;
+    height: 100%;
+
+    content: "";
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.25),
+        transparent
+    );
+
+    transform: skewX(-20deg);
+
+    transition: left 600ms ease;
+}
+
+button:hover:not(:disabled) {
+    background-position: 100% 0;
+
+    box-shadow:
+        0 10px 35px rgba(37, 99, 235, 0.42),
+        0 0 25px rgba(34, 211, 238, 0.15);
+
+    transform: translateY(-3px);
+}
+
+button:hover:not(:disabled)::before {
+    left: 140%;
+}
+
+button:active:not(:disabled) {
+    transform: translateY(-1px) scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+/* 9. ZONE DE RÉPONSE */
+
+#response {
+    position: relative;
+
+    min-height: 110px;
+    padding: 25px 27px;
+
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+
+    border: 1px solid rgba(34, 211, 238, 0.17);
+    border-left: 3px solid var(--cyan);
+    border-radius: 14px;
+
+    color: #DCEAF7;
+
+    background:
+        radial-gradient(
+            ellipse at 0% 0%,
+            rgba(34, 211, 238, 0.07),
+            transparent 65%
+        ),
+        rgba(8, 13, 27, 0.72);
+
+    font-size: 16px;
+    line-height: 1.85;
+    letter-spacing: 0.01em;
+
+    transition:
+        border-color 300ms ease,
+        box-shadow 300ms ease,
+        background 300ms ease;
+}
+
+#response:not(:empty) {
+    box-shadow:
+        inset 0 0 25px rgba(34, 211, 238, 0.025);
+}
+
+/* 10. INDICATEUR DE RÉFLEXION */
+
+#response.is-loading {
+    display: flex;
+    align-items: center;
+
+    color: var(--cyan-light);
+    font-weight: 600;
+
+    border-left-color: var(--blue-light);
+
+    animation: response-pulse 1.8s ease-in-out infinite;
+}
+
+#response.is-loading::after {
+    display: inline-block;
+
+    width: 7px;
+    height: 7px;
+
+    margin-left: 8px;
+
+    content: "";
+
+    border-radius: 50%;
+
+    background: var(--cyan);
+
+    box-shadow:
+        12px 0 0 rgba(34, 211, 238, 0.65),
+        24px 0 0 rgba(34, 211, 238, 0.30);
+
+    animation: thinking-dots 1.2s infinite ease-in-out;
+}
+
+/* 11. RÉPONSE REÇUE */
+
+#response.is-answer {
+    border-left-color: var(--success);
+
+    border-color: rgba(34, 197, 94, 0.20);
+
+    background:
+        radial-gradient(
+            ellipse at 0% 0%,
+            rgba(34, 197, 94, 0.07),
+            transparent 65%
+        ),
+        rgba(8, 13, 27, 0.75);
+
+    animation: answer-arrive 550ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+/* 12. ERREURS */
+
+#response.is-error {
+    border-left-color: var(--danger);
+    border-color: rgba(248, 113, 113, 0.3);
+
+    background:
+        radial-gradient(
+            ellipse at 0% 0%,
+            rgba(248, 113, 113, 0.08),
+            transparent 65%
+        ),
+        rgba(30, 12, 20, 0.65);
+
+    color: #FCA5A5;
+
+    animation: error-shake 350ms ease both;
+}
+
+/* 13. SÉLECTION DE TEXTE */
+
+::selection {
+    color: #FFFFFF;
+    background: rgba(37, 99, 235, 0.65);
+}
+
+/* 14. ANIMATIONS */
+
+@keyframes brain-pulse {
+    0%, 100% {
+        opacity: 0.55;
+        transform: translate(-50%, -50%) scale(0.85);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.18);
+    }
+}
+
+@keyframes orbit-glow {
+    from {
+        transform: translate(-50%, -50%) rotate(-20deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(340deg);
+    }
+}
+
+@keyframes title-appear {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+        filter: blur(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes title-shimmer {
+    from {
+        background-position: 200% center;
+    }
+
+    to {
+        background-position: -200% center;
+    }
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes section-appear {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes thinking-dots {
+    0%, 60%, 100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes response-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 rgba(34, 211, 238, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 24px rgba(34, 211, 238, 0.09);
+    }
+}
+
+@keyframes answer-arrive {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+        filter: blur(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes error-shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
+}
+
+/* 15. RESPONSIVE */
+
+@media (max-width: 700px) {
+    header {
+        min-height: 290px;
+        padding: 65px 20px;
+    }
+
+    header h1 {
+        font-size: clamp(2.5rem, 12vw, 4rem);
+        letter-spacing: 0.08em;
+    }
+
+    header p {
+        max-width: 420px;
+        font-size: 15px;
+    }
+
+    header::before {
+        width: 270px;
+        height: 270px;
+    }
+
+    header::after {
+        width: 230px;
+        height: 85px;
+    }
+
+    main {
+        width: 92%;
+        margin: 40px auto 65px;
+    }
+
+    section {
+        padding: 25px 20px;
+        border-radius: 17px;
+    }
+
+    form {
+        flex-direction: column;
+    }
+
+    input {
+        width: 100%;
+    }
+
+    button {
+        width: 100%;
+        min-height: 52px;
+    }
+
+    #response {
+        padding: 19px;
+        font-size: 15px;
+    }
+}
+
+/* 16. PETITS ÉCRANS */
+
+@media (max-width: 380px) {
+    header {
+        padding: 55px 15px;
+    }
+
+    header h1 {
+        font-size: 2.4rem;
+    }
+
+    main {
+        width: 94%;
+    }
+
+    section {
+        padding: 21px 16px;
+    }
+
+    section h2 {
+        font-size: 1.2rem;
+    }
+}
+
+/* 17. ACCESSIBILITÉ : MOUVEMENTS RÉDUITS */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

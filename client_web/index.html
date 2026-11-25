@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HBntory - Assistant intelligent</title>
+
+    <!-- Police Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Feuille de style -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- JavaScript -->
+    <script src="js/app.js" defer></script>
+</head>
+
+<body>
+
+    <!-- En-tête -->
+    <header>
+        <h1>HBntory</h1>
+        <p>Votre assistant intelligent pour les produits et les stocks</p>
+    </header>
+
+    <!-- Contenu principal -->
+    <main>
+
+        <!-- Formulaire de question -->
+        <section>
+            <h2>Posez votre question</h2>
+
+            <form id="question-form">
+
+                <input
+                    type="text"
+                    id="question"
+                    name="question"
+                    placeholder="Exemple : Quel est le stock du produit 34 à Lyon ?"
+                    autocomplete="off"
+                    required
+                >
+
+                <button type="submit">Envoyer</button>
+
+            </form>
+        </section>
+
+        <!-- Réponse de l'assistant -->
+        <section>
+            <h2>Réponse de l'assistant</h2>
+
+            <div id="response" aria-live="polite" aria-atomic="true">
+                La réponse apparaîtra ici.
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
