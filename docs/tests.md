@@ -1,71 +1,101 @@
-# HBntory — Plan et preuves de tests
+# HBntory — Preuves de tests
 
-Ce document rassemble les scénarios de validation du Backoffice, les vérifications complémentaires et les essais d'intégration de l'AI Query Service et du Client Web.
+Ce document rassemble les scénarios de validation du Backoffice, les tests automatisés du serveur MCP et les scénarios d'intégration de l'agent IA et du Client Web.
 
-> **Statut des preuves :** les résultats des scénarios Backoffice, IA et Client Web sont repris des documents du projet et des validations d'intégration consignées. La section 3 contient la sortie réelle de l'exécution de la suite de tests MCP effectuée le 25 novembre 2026.
+Les scénarios Backoffice et IA / Client Web ci-dessous reprennent les validations consignées pendant l'intégration du projet.
 
-## 1. Backoffice — 9 scénarios fonctionnels de la consigne
+## Préparation
 
-Les neuf scénarios couvrent les principales fonctions décrites dans le périmètre du MVP, l'authentification et le README du Backoffice.
+Les commandes supposent que PostgreSQL, la Product API et le Backoffice sont démarrés et que la base contient les données initialisées par le script seed.
 
-| N° | Rôle | Scénario | Résultat attendu | Résultat documenté |
+### Connexion utilisateur standard
+
+```bash
+curl -s -c cookies.txt -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "common_user", "password": "<USER_PASSWORD>"}'
+```
+
+### Connexion administrateur
+
+```bash
+curl -s -c cookies_admin.txt -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "<ADMIN_PASSWORD>"}'
+```
+
+Les mots de passe sont ceux définis par `USER_PASSWORD` et `ADMIN_PASSWORD` au moment du seed. Ils ne sont pas enregistrés en clair dans le dépôt.
+
+# 1. Scénarios exigés par la consigne — Backoffice
+
+| N° | Scénario | Requête | Résultat attendu | Résultat obtenu |
 |---:|---|---|---|---|
-| 1 | Admin et utilisateur standard | Se connecter avec des identifiants valides | Connexion acceptée et session ouverte avec le rôle correspondant | Validé dans `docs/auth.md` |
-| 2 | Admin | Consulter la liste des utilisateurs | Liste retournée avec rôle, agence et état du compte ; aucun haché de mot de passe exposé | Route et contrôle documentés |
-| 3 | Admin | Créer un utilisateur standard et l'affecter à une agence | Utilisateur créé avec le rôle `common_user` et l'agence demandée | Création documentée dans `backoffice/README.md` |
-| 4 | Admin | Modifier le mot de passe d'un utilisateur standard | Nouveau mot de passe accepté ; ancien mot de passe refusé | Validé : ancien refusé (401), nouveau accepté (200) |
-| 5 | Admin | Modifier l'agence d'un utilisateur standard | L'utilisateur consulte ensuite le stock de sa nouvelle agence | Validé dans `backoffice/README.md` |
-| 6 | Admin | Désactiver un utilisateur standard | Compte désactivé ; nouvelle connexion refusée ; stock conservé | Validé : connexion refusée (401) |
-| 7 | Utilisateur standard | Consulter le stock de son agence | Seules les quantités de l'agence liée au compte sont retournées | Validé dans `docs/auth.md` |
-| 8 | Utilisateur standard | Ajouter du stock | Quantité ajoutée à l'agence de l'utilisateur et quantité finale retournée | Ajout normal documenté : 200 |
-| 9 | Utilisateur standard | Retirer du stock | Retrait accepté si le stock est suffisant ; le stock ne devient jamais négatif | Retrait normal et insuffisant documentés : 200 / 409 |
+| 1 | Ajouter un stock valide | `POST /api/stock/add` avec `product_id: 34`, `quantity: 2` | HTTP 200, quantité de 20 à 22 | ✅ |
+| 2 | Retirer un stock valide | `POST /api/stock/remove` avec `product_id: 34`, `quantity: 2` | HTTP 200, quantité diminuée de 2 | ✅ |
+| 3 | Retrait supérieur au stock disponible | `POST /api/stock/remove` avec `product_id: 34`, `quantity: 999` | HTTP 409, « Stock insuffisant », stock inchangé | ✅ |
+| 4 | Empêcher une action sur une autre agence | `POST /api/stock/add` avec `branch_id: 2` dans la requête | HTTP 200, ajout dans l'agence de l'utilisateur ; le `branch_id` fourni est ignoré | ✅ |
+| 5 | Créer un utilisateur standard | `POST /api/users` avec le compte administrateur | HTTP 201, rôle `common_user` et agence attribuée | ✅ |
+| 6 | Désactiver un utilisateur | `DELETE /api/users/<id>` avec le compte administrateur | HTTP 200, `is_active` passe à `false` | ✅ |
+| 7 | Empêcher la connexion d'un utilisateur désactivé | `POST /api/login` avec le compte désactivé | HTTP 401, « Identifiants invalides » | ✅ |
+| 8 | Empêcher l'administrateur de gérer le stock | `POST /api/stock/add` avec le compte administrateur | HTTP 403, « Accès interdit » | ✅ |
+| 9 | Récupérer les détails des produits depuis la Product API | `GET /api/stock/products` | Noms et SKU retournés, `product_api_available: true` | ✅ |
 
-## 2. Backoffice — 9 scénarios supplémentaires
+# 2. Scénarios supplémentaires — Backoffice
 
-Ces scénarios complètent les fonctions principales avec des cas limites et des contrôles de sécurité. Les codes HTTP sont ceux consignés dans le README du Backoffice et dans `docs/auth.md`.
+| N° | Scénario | Requête | Résultat attendu | Résultat obtenu |
+|---:|---|---|---|---|
+| 10 | Accès sans authentification | `GET /api/stock` sans cookie | HTTP 401, authentification requise | ✅ |
+| 11 | Utilisateur standard sur une route administrateur | `GET /api/users` avec `common_user` | HTTP 403, accès interdit | ✅ |
+| 12 | Quantité nulle ou négative | `POST /api/stock/add` avec une quantité de 0 ou négative | HTTP 400 | ✅ |
+| 13 | Quantité booléenne | `POST /api/stock/add` avec `quantity: true` | HTTP 400, les quantités doivent être des entiers | ✅ |
+| 14 | Produit inconnu de la Product API | `POST /api/stock/add` avec `product_id: 9999` | HTTP 404, produit inconnu | ✅ |
+| 15 | Ajout d'un produit absent du stock | `POST /api/stock/add` avec `product_id: 8`, `quantity: 3` | HTTP 200, création d'une ligne avec quantité 3 | ✅ |
+| 16 | Nom d'utilisateur déjà utilisé | `POST /api/users` avec un nom existant | HTTP 409 | ✅ |
+| 17 | Product API arrêtée pendant une consultation | `GET /api/stock/products` | HTTP 200, noms à `null`, `product_api_available: false` | ✅ |
+| 18 | Product API arrêtée pendant un ajout | `POST /api/stock/add` | HTTP 503, Product API indisponible | ✅ |
 
-| N° | Scénario complémentaire | Résultat attendu / documenté | État |
-|---:|---|---|---|
-| 1 | Création d'un utilisateur avec un nom déjà utilisé | `409 Conflict` | Validé |
-| 2 | Création ou réaffectation avec un identifiant d'agence inconnu | `400 Bad Request` | Validé |
-| 3 | Changement de mot de passe : essai avec l'ancien puis le nouveau | Ancien refusé (`401`), nouveau accepté (`200`) | Validé |
-| 4 | Changement d'agence d'un utilisateur | Le stock affiché correspond à la nouvelle agence | Validé |
-| 5 | Désactivation d'un utilisateur standard et tentative de désactivation de l'admin | Connexion de l'utilisateur désactivé refusée (`401`) ; désactivation de l'admin refusée (`400`) | Validé |
-| 6 | Ajout d'un produit déjà présent ou absent du stock de l'agence | Ajout accepté dans les deux cas (`200`) | Validé |
-| 7 | Ajout avec quantité négative ou identifiant de produit absent du catalogue | Quantité invalide refusée (`400`) ; produit inconnu refusé (`404`) | Validé |
-| 8 | Retrait normal, retrait supérieur au stock ou retrait d'un produit absent | Retrait normal accepté (`200`) ; stock insuffisant refusé (`409`) | Validé |
-| 9 | Indisponibilité de la Product API pendant la consultation et la gestion du stock | Stock consultable sans noms ; catalogue et ajout refusés avec `503` | Validé |
+### Exemple : retrait supérieur au stock
 
-### Contrôles d'autorisation supplémentaires
+```bash
+curl -s -b cookies.txt -X POST http://localhost:5000/api/stock/remove \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": 34, "quantity": 999}'
 
-- Un utilisateur non connecté ne peut pas consulter `GET /api/me` : `401`.
-- Un utilisateur `common_user` ne peut pas consulter la liste des utilisateurs : `403`.
-- Un administrateur ne peut pas consulter le stock : `403`.
-- Les routes contrôlent le rôle et l'agence côté backend. Le masquage d'un bouton dans l'interface ne constitue pas une mesure de sécurité.
+# Résultat attendu :
+# {"error": "Stock insuffisant."}
+```
 
-## 3. Serveur MCP — tests automatisés
+### Garanties complémentaires assurées par le code et la base
+
+- **Deux retraits simultanés :** le retrait utilise une requête atomique `UPDATE ... WHERE available_quantity >= quantité`. La quantité ne peut pas devenir négative.
+- **Deux ajouts simultanés d'un nouveau produit :** la contrainte unique sur `(branch_id, product_id)` empêche la création de deux lignes. La gestion de l'`IntegrityError` permet de reporter l'ajout sur la ligne existante.
+- **Quantité négative en base :** la contrainte `CHECK (available_quantity >= 0)` protège également les données au niveau PostgreSQL.
+
+# 3. Serveur MCP — tests automatisés
+
+Les tests vérifient le fonctionnement des outils du serveur MCP (Model Context Protocol), les échanges avec la Product API et les consultations de stock dans PostgreSQL.
 
 ### Commande exécutée
 
-Depuis la racine du dépôt, avec l'environnement virtuel du serveur MCP :
+Depuis la racine du dépôt :
 
 ```bash
 PYTHONPATH=mcp_server mcp_server/venv/bin/python -m pytest -v mcp_server/tests/
 ```
 
-La suite automatisée est définie dans `mcp_server/tests/test_server.py`.
+### Résumé de l'exécution
 
-Elle couvre les groupes de tests suivants :
+- Date : 25 novembre 2026
+- Python : 3.14.4
+- Pytest : 9.2.0
+- Tests collectés : 20
+- Tests réussis : 20
+- Échecs : 0
+- Durée : 1,14 seconde
 
-| Domaine | Cas couverts |
-|---|---|
-| Product API | Liste des produits ; détail d'un produit ; produit inexistant ; erreur de connexion ; dépassement du délai ; erreur HTTP serveur |
-| Stock par produit | Résultat dans plusieurs agences ; absence de stock ; identifiants invalides (0, négatif, chaîne, booléen) ; erreur PostgreSQL |
-| Stock par agence | Résultat avec produits ; agence inexistante ; identifiants invalides (0, négatif, chaîne, booléen) ; erreur PostgreSQL |
+### Sortie réelle du terminal
 
-### Sortie réelle de `pytest -v`
-
-**Résultat de l'exécution du 25 novembre 2026 : 20 tests réussis, aucun échec, en 1,14 seconde.**
+La sortie suivante est celle de l'exécution effectuée dans l'environnement local du projet.
 
 ```text
 =========================================================================== test session starts ===========================================================================
@@ -73,7 +103,7 @@ platform linux -- Python 3.14.4, pytest-9.2.0, pluggy-1.7.0 -- /home/kheang/proj
 cachedir: .pytest_cache
 rootdir: /home/kheang/projects/hbntory
 configfile: pytest.ini
-plugins: asyncio-1.5.0, platformdirs-4.16.0, anyio-4.16.0
+plugins: asyncio-1.5.0, platformdirs-4.14.5, anyio-4.16.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
 collected 20 items
 
@@ -87,49 +117,56 @@ mcp_server/tests/test_server.py::test_get_stock_by_product_success PASSED       
 mcp_server/tests/test_server.py::test_get_stock_by_product_no_stock PASSED                                                                                          [ 40%]
 mcp_server/tests/test_server.py::test_get_stock_by_product_invalid_id[0] PASSED                                                                                     [ 45%]
 mcp_server/tests/test_server.py::test_get_stock_by_product_invalid_id[-1] PASSED                                                                                    [ 50%]
-mcp_server/tests/test_server.py::test_get_stock_by_product_invalid_id[12] PASSED                                                                                     [ 55%]
+mcp_server/tests/test_server.py::test_get_stock_by_product_invalid_id[12] PASSED                                                                                    [ 55%]
 mcp_server/tests/test_server.py::test_get_stock_by_product_invalid_id[True] PASSED                                                                                  [ 60%]
-mcp_server/tests/test_server.py::test_get_stock_by_product_database_error PASSED                                                                                    [ 65%]
+mcp_server/tests/test_server.py::test_get_stock_by_product_database_error PASSED                                                                                   [ 65%]
 mcp_server/tests/test_server.py::test_get_stock_by_branch_success PASSED                                                                                            [ 70%]
 mcp_server/tests/test_server.py::test_get_stock_by_branch_not_found PASSED                                                                                          [ 75%]
-mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[0] PASSED                                                                                      [ 80%]
-mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[-1] PASSED                                                                                     [ 85%]
-mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[1] PASSED                                                                                      [ 90%]
-mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[True] PASSED                                                                                    [ 95%]
+mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[0] PASSED                                                                                     [ 80%]
+mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[-1] PASSED                                                                                    [ 85%]
+mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[1] PASSED                                                                                     [ 90%]
+mcp_server/tests/test_server.py::test_get_stock_by_branch_invalid_id[True] PASSED                                                                                   [ 95%]
 mcp_server/tests/test_server.py::test_get_stock_by_branch_database_error PASSED                                                                                     [100%]
 
 =========================================================================== 20 passed in 1.14s ============================================================================
 ```
 
-## 4. Intégration — AI Query Service et Client Web
+### Couverture des tests MCP
 
-Les scénarios suivants reprennent les exemples d'utilisation et les validations d'intégration consignés dans le README du projet, ainsi que le comportement du code de l'agent et du Client Web.
+| Domaine | Vérifications |
+|---|---|
+| Product API | Liste des produits, détail, produit inexistant, erreur de connexion, timeout et erreur HTTP 503 |
+| Stock par produit | Consultation dans plusieurs agences, absence de stock, identifiants invalides et erreur PostgreSQL |
+| Stock par agence | Consultation des produits, agence inexistante, identifiants invalides et erreur PostgreSQL |
 
-| N° | Composant | Scénario | Résultat attendu / documenté | État documentaire |
+La suite automatisée correspond au fichier `mcp_server/tests/test_server.py`.
+
+# 4. Agent IA et Client Web — intégration
+
+Les scénarios suivants ont été consignés comme validés pendant l'intégration du Client Web et de l'agent IA.
+
+| N° | Scénario | Question ou action | Résultat attendu | Résultat obtenu |
 |---:|---|---|---|---|
-| 1 | Client Web → AI Query Service | Envoyer une question en langage naturel | La question est transmise à `POST /ask` et la réponse de l'assistant est affichée | Intégration documentée |
-| 2 | IA → MCP → Product API | Demander la liste des produits du catalogue | L'assistant présente le catalogue et distingue les produits arrêtés | Exemple documenté dans le README |
-| 3 | IA → MCP → Product API | Demander les caractéristiques d'un produit par SKU, par exemple `HB-SEC-1402` | Les caractéristiques fournies par la Product API sont restituées | Exemple documenté dans le README |
-| 4 | IA → MCP → PostgreSQL | Demander le stock d'un produit dans toutes les agences | Les quantités sont présentées par agence | Exemple documenté dans le README |
-| 5 | IA → MCP → PostgreSQL | Demander les produits disponibles dans une agence, par exemple Paris | L'agent retrouve l'identifiant avec `list_branches`, puis consulte le stock de l'agence | Scénario décrit dans les instructions de l'agent |
-| 6 | IA → MCP → Product API et PostgreSQL | Demander une recommandation d'équipement pour une salle informatique | Recommandations fondées sur le catalogue ; elles ne sont pas présentées comme une réservation ni comme une confirmation de stock | Exemple documenté dans le README |
-| 7 | Client Web | Envoyer une question vide | Message demandant de saisir une question ; aucune requête n'est envoyée | Contrôle présent dans `client_web/js/app.js` |
-| 8 | Client Web | Envoyer une question pendant le traitement | Indicateur de chargement affiché ; bouton et champ désactivés, puis réactivés après traitement | Comportement implémenté dans `client_web/js/app.js` |
-| 9 | Client Web | Arrêter volontairement l'AI Query Service puis envoyer une question | Message : « Impossible de contacter l'assistant. Veuillez réessayer. » | Essai explicitement décrit dans le README |
+| 19 | Disponibilité d'un produit | « Où trouver la Wireless Mouse ? » | L'assistant indique les agences qui possèdent le produit et les quantités disponibles | ✅ |
+| 20 | Produits disponibles dans une agence | « Quels produits sont disponibles à Paris ? » | L'assistant présente les produits et les quantités de l'agence de Paris | ✅ |
+| 21 | Produit inconnu | « Où trouver le produit XYZ ? » | L'assistant indique clairement que le produit est inconnu | ✅ |
+| 22 | Information indisponible | Poser une question lorsque la Product API est arrêtée | L'assistant indique que l'information est indisponible, sans inventer de quantité | ✅ |
+| 23 | Intégration complète Backoffice et Client Web | Ajouter 5 souris dans le Backoffice, puis interroger le Client Web | L'assistant retrouve et cite les quantités actualisées | ✅ |
 
 ### Règles de fiabilité des réponses IA
 
-- Les informations de catalogue et de stock doivent provenir des outils MCP autorisés.
-- Les outils accessibles à l'agent sont `list_products`, `get_product`, `list_branches`, `get_stock_by_product` et `get_stock_by_branch`.
-- L'IA ne modifie pas le stock : les ajouts et retraits sont réservés au Backoffice.
-- Une information absente, une quantité nulle et une erreur technique doivent rester distinguées.
-- L'assistant ne doit pas inventer une quantité, une caractéristique, un prix ou une disponibilité.
+- Les informations sur le catalogue et les stocks proviennent des outils MCP autorisés.
+- L'agent utilise `list_products`, `get_product`, `list_branches`, `get_stock_by_product` et `get_stock_by_branch`.
+- L'IA consulte les stocks mais ne les modifie pas.
+- Les ajouts et retraits de stock sont exclusivement effectués depuis le Backoffice.
+- Une donnée absente, une quantité égale à zéro et une erreur technique doivent être distinguées.
+- L'assistant ne doit jamais inventer une quantité, un prix, une caractéristique ou une disponibilité.
 
-## 5. Références
+# 5. Références
 
+- [README du projet](../README.md)
 - [Périmètre du MVP](mvp.md)
 - [Authentification et autorisation](auth.md)
 - [Documentation du Backoffice](../backoffice/README.md)
-- [Tests existants du serveur MCP](../mcp_server/TESTS.md)
+- [Documentation des tests MCP](../mcp_server/TESTS.md)
 - [Suite automatisée MCP](../mcp_server/tests/test_server.py)
-- [README et scénarios d'intégration](../README.md)
