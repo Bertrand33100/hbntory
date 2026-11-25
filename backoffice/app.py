@@ -74,8 +74,12 @@ def fetch_products():
         response.raise_for_status()
     except requests.RequestException:
         return None
-    products = response.json()["results"]
-    return {product["id"]: product for product in products}
+    # Réponse illisible ou incomplète : on la traite comme une API en panne
+    try:
+        products = response.json()["results"]
+        return {product["id"]: product for product in products}
+    except (ValueError, KeyError, TypeError):
+        return None
 
 
 @app.route("/api/login", methods=["POST"])
