@@ -178,7 +178,7 @@ def create_user():
         return {"error": "Nom, mot de passe et agence requis."}, 400
     if len(password) < 8:
         return {"error": "Mot de passe : 8 caractères minimum."}, 400
-    if not isinstance(branch_id, int):
+    if type(branch_id) is not int:
         return {"error": "L'identifiant de l'agence doit être un entier."}, 400
 
     if db.session.get(Branch, branch_id) is None:
@@ -236,7 +236,7 @@ def change_branch(user_id):
 
     data = request.get_json(silent=True) or {}
     branch_id = data.get("branch_id")
-    if not isinstance(branch_id, int):
+    if type(branch_id) is not int:
         return {"error": "L'agence doit être un identifiant numérique."}, 400
     if db.session.get(Branch, branch_id) is None:
         return {"error": "Agence inexistante."}, 400
@@ -286,7 +286,7 @@ def add_stock():
     product_id = data.get("product_id")
     quantity = data.get("quantity")
 
-    if not isinstance(product_id, int) or not isinstance(quantity, int):
+    if type(product_id) is not int or type(quantity) is not int:
         return {"error": "Produit et quantité doivent être des entiers."}, 400
     if quantity <= 0:
         return {"error": "La quantité doit être positive."}, 400
@@ -346,7 +346,7 @@ def remove_stock():
     product_id = data.get("product_id")
     quantity = data.get("quantity")
 
-    if not isinstance(product_id, int) or not isinstance(quantity, int):
+    if type(product_id) is not int or type(quantity) is not int:
         return {"error": "Produit et quantité doivent être des entiers."}, 400
     if quantity <= 0:
         return {"error": "La quantité doit être positive."}, 400
