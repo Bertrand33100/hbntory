@@ -8,6 +8,7 @@ from argon2.exceptions import VerifyMismatchError
 from flask import Flask, request, session
 import requests
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 
 from database import db
 from models import Branch, Stock, User
@@ -297,17 +298,34 @@ def add_stock():
         branch_id=user.branch_id, product_id=product_id
     ).first()
     if item is None:
-        item = Stock(
+        db.session.add(Stock(
             branch_id=user.branch_id,
             product_id=product_id,
             available_quantity=quantity,
-        )
-        db.session.add(item)
+        ))
     else:
         # L'addition est faite par la base elle-même, en une seule opération
         item.available_quantity = Stock.available_quantity + quantity
-    db.session.commit()
 
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Une autre requête vient de créer la ligne : on ajoute à la place
+        db.session.rollback()
+        db.session.execute(
+            update(Stock)
+            .where(
+                Stock.branch_id == user.branch_id,
+                Stock.product_id == product_id,
+            )
+            .values(available_quantity=Stock.available_quantity + quantity)
+        )
+        db.session.commit()
+
+    # On relit la ligne pour renvoyer la quantité finale
+    item = Stock.query.filter_by(
+        branch_id=user.branch_id, product_id=product_id
+    ).first()
     return {
         "branch_id": user.branch_id,
         "product_id": product_id,
